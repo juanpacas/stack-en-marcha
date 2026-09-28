@@ -97,7 +97,8 @@ a{color:var(--accent)}
 .station.now .dot{border-color:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
 .st-t{display:block;font-family:var(--display);font-weight:700;font-size:1.05rem;line-height:1.2}
 .st-d{display:block;font-size:.88rem;color:var(--muted)}
-.station .count{font-family:var(--mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.station .count{font-family:var(--mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;line-height:1.35}
+.station .count small{font-size:.7rem;white-space:nowrap}
 .tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--xp-soft);color:var(--xp);margin-left:6px;vertical-align:2px}
 
 /* module */
@@ -861,6 +862,622 @@ ___ a cada uno: fila del Excel
    └─ sí → avisar por Slack`, ans:['Webhook','IA','IF'], chips:['IF','Webhook','IA','CSS'] } },
 ];
 
+/* ---------- MÁS LECCIONES Y RETOS POR MÓDULO ----------
+   Cada lección nueva tiene una "key" propia para no cambiar el progreso guardado.
+   "at" indica en qué posición del módulo se inserta (si no, va al final). */
+const MAS = {
+ web: { ls:[
+  { key:'dns', t:'DNS y dominios', i:'Tu computador no entiende nombres como tienda.com: necesita una dirección IP. El DNS es la guía telefónica de internet y traduce el dominio a la IP del servidor. Cuando compras un dominio, configuras sus registros DNS para que apunten a tu hosting.',
+    c:`tienda.com  →  DNS  →  76.76.21.21
+
+Registro A      tienda.com       76.76.21.21
+Registro CNAME  www.tienda.com   tienda.com`,
+    k:'El DNS traduce nombres de dominio a direcciones IP. Un registro A apunta un dominio a una IP.',
+    q:['¿Qué hace el DNS?',['Guarda contraseñas','Traduce un dominio a una dirección IP','Diseña la página'],1,'Sin DNS tendrías que memorizar números como 76.76.21.21 para cada sitio.'] },
+  { key:'https', t:'HTTPS y certificados', i:'HTTPS es HTTP cifrado. Nadie en el camino, como el wifi de un café, puede leer ni cambiar lo que viaja. Hoy es obligatorio: los navegadores marcan como inseguro cualquier sitio sin HTTPS, y servicios como Vercel te dan el certificado gratis.',
+    c:`http://tienda.com   → texto plano: cualquiera en la red lo lee
+https://tienda.com  → cifrado con TLS: solo tú y el servidor lo entienden
+
+Certificado gratis: Let's Encrypt (Vercel y Netlify lo ponen solos)`,
+    k:'HTTPS cifra todo lo que viaja entre el navegador y el servidor. Úsalo siempre.',
+    q:['¿Qué protege HTTPS?',['Que el diseño cargue más rápido','Que nadie en la red lea o cambie los datos','Que la base de datos no se llene'],1,'Por eso es seguro enviar contraseñas y pagos por HTTPS.'] },
+  { key:'devtools', t:'Las DevTools del navegador', i:'Las herramientas de desarrollador del navegador son tu mejor amigo. Con F12 ves los errores en la consola, cada petición de red con su código de estado, y puedes editar el HTML y el CSS en vivo para probar cambios.',
+    c:`F12 (o clic derecho → Inspeccionar)
+  Elements     → ver y editar HTML y CSS en vivo
+  Console      → errores de JavaScript y console.log
+  Network      → cada petición: URL, método, estado y tiempo
+  Application  → cookies y localStorage`,
+    k:'F12 abre las DevTools: Console para errores, Network para peticiones, Elements para HTML y CSS.',
+    q:['Tu página no carga datos. ¿Qué pestaña revisas para ver la petición fallida?',['Elements','Network','Fonts'],1,'En Network ves la petición, su código de estado y la respuesta del servidor.'] },
+ ], retos:[
+  { code:`200 → ___
+404 → ___
+500 → ___`, ans:['OK','No encontrado','Error del servidor'], chips:['Error del servidor','OK','Creado','No encontrado'] },
+  { code:`<___ href="/contacto">Escríbenos</a>
+<___ src="logo.png" alt="Logo">
+<___ type="email" placeholder="Tu correo">`, ans:['a','img','input'], chips:['img','div','input','a'] },
+ ]},
+
+ js: { ls:[
+  { key:'cond', at:1, t:'Condicionales y comparaciones', i:'Con if decides qué hacer según una condición. Compara siempre con tres iguales, que revisa el valor y el tipo. El operador ternario resume un if corto en una sola línea.',
+    c:`const edad = 20;
+if (edad >= 18) {
+  console.log("Puede entrar");
+} else {
+  console.log("Menor de edad");
+}
+
+"5" == 5;   // true: compara solo el valor, evítalo
+"5" === 5;  // false: compara valor y tipo
+
+const tipo = edad >= 18 ? "adulto" : "menor";`,
+    k:'Usa === para comparar: revisa valor y tipo. El ternario condición ? a : b resume un if corto.',
+    q:['¿Qué devuelve "5" === 5?',['true','false','Error'],1,'Uno es texto y el otro número. Con tres iguales el tipo también cuenta.'] },
+  { key:'bucles', at:4, t:'Bucles y reduce', i:'Para recorrer una lista usa for...of, que es claro y corto. Para convertir una lista en un solo valor, como el total de un carrito, usa reduce: lleva un acumulador que empieza en un valor inicial.',
+    c:`const carrito = [12, 30, 8];
+
+for (const precio of carrito) {
+  console.log(precio);
+}
+
+const total = carrito.reduce((suma, p) => suma + p, 0); // 50`,
+    k:'for...of recorre una lista. reduce la convierte en un solo valor empezando desde un valor inicial.',
+    q:['En reduce((suma, p) => suma + p, 0), ¿qué es el 0?',['El valor inicial del acumulador','El índice del array','Un error'],0,'Sin valor inicial, reduce falla con listas vacías.'] },
+  { key:'errores', t:'Manejo de errores', i:'Las cosas fallan: la red se cae, el servidor responde 500 o el JSON viene mal. Con try y catch atrapas el error y muestras un mensaje útil en vez de romper la app. Ojo: fetch no lanza error con un 404, así que revisa res.ok.',
+    c:`async function cargar() {
+  try {
+    const res = await fetch("/api/tareas");
+    if (!res.ok) throw new Error("Respuesta " + res.status);
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+    mostrarAviso("No pudimos cargar tus tareas. Intenta de nuevo.");
+    return [];
+  }
+}`,
+    k:'try/catch atrapa errores. fetch no falla con 404 o 500: revisa res.ok tú mismo.',
+    q:['fetch recibe un 404. ¿Qué pasa?',['Lanza un error automáticamente','No lanza error: debes revisar res.ok','Recarga la página'],1,'fetch solo falla si no hay red. Los códigos de error los revisas con res.ok o res.status.'] },
+ ], retos:[
+  { code:`const aprobado = nota ___ 3 ___ "Sí" ___ "No";
+if (rol ___ "admin") mostrarPanel();`, ans:['>=','?',':','==='], chips:['===',':','?','>=','='] },
+  { code:`___ {
+  const total = precios.___((s, p) => s + p, ___);
+} ___ (err) {
+  console.error(err);
+}`, ans:['try','reduce','0','catch'], chips:['catch','0','map','reduce','try'] },
+ ]},
+
+ ts: { ls:[
+  { key:'interface', at:2, t:'Interfaces y extends', i:'interface es otra forma de describir objetos, muy usada para los modelos de datos. Con extends una interfaz hereda los campos de otra y agrega los suyos. Así no repites propiedades.',
+    c:`interface Usuario {
+  id: number;
+  nombre: string;
+}
+
+interface Admin extends Usuario {
+  permisos: string[];
+}
+
+const a: Admin = { id: 1, nombre: "Ana", permisos: ["borrar"] };`,
+    k:'interface describe objetos y extends hereda los campos de otra interfaz.',
+    q:['Admin extends Usuario. ¿Qué campos tiene Admin?',['Solo permisos','Los de Usuario más permisos','Ninguno'],1,'extends copia los campos de Usuario y suma los nuevos.'] },
+  { key:'utility', t:'Partial, Pick y Omit', i:'TypeScript trae tipos utilitarios para no repetir código. Partial vuelve todo opcional, útil para actualizar. Pick toma algunos campos y Omit quita otros, por ejemplo para no exponer la contraseña.',
+    c:`type Usuario = { id: number; nombre: string; email: string; password: string };
+
+type CambiosUsuario = Partial<Usuario>;            // todo opcional
+type UsuarioPublico = Omit<Usuario, "password">;   // sin la contraseña
+type Contacto = Pick<Usuario, "nombre" | "email">; // solo dos campos`,
+    k:'Partial vuelve todo opcional, Omit quita campos y Pick escoge campos.',
+    q:['Quieres enviar el usuario al frontend sin la contraseña. ¿Qué usas?',['Partial<Usuario>','Omit<Usuario, "password">','Pick<Usuario, "password">'],1,'Omit crea un tipo igual pero sin los campos que indiques.'] },
+ ], retos:[
+  { code:`___ Admin ___ Usuario {
+  permisos: string[];
+}`, ans:['interface','extends'], chips:['type','extends','interface','implements'] },
+  { code:`type Publico = ___<Usuario, "password">;
+type Cambios = ___<Usuario>;
+type Estado = "activo" ___ "inactivo";`, ans:['Omit','Partial','|'], chips:['Partial','&','Omit','|','Pick'] },
+ ]},
+
+ react: { ls:[
+  { key:'forms', at:2, t:'Formularios controlados', i:'En React el valor de un input vive en el estado. Cada tecla actualiza el estado con onChange y al enviar usas ese valor. Así siempre sabes qué hay en el formulario y puedes validarlo.',
+    c:`function NuevaTarea({ onCrear }: { onCrear: (t: string) => void }) {
+  const [texto, setTexto] = useState("");
+  return (
+    <form onSubmit={e => { e.preventDefault(); onCrear(texto); setTexto(""); }}>
+      <input value={texto} onChange={e => setTexto(e.target.value)} />
+      <button disabled={!texto}>Agregar</button>
+    </form>
+  );
+}`,
+    k:'Input controlado: value viene del estado y onChange lo actualiza. preventDefault evita recargar la página.',
+    q:['¿Para qué sirve e.preventDefault() en onSubmit?',['Para borrar el input','Para que el formulario no recargue la página','Para validar el email'],1,'Por defecto un formulario recarga la página al enviarse, y en React no quieres eso.'] },
+  { key:'hooks', t:'Render condicional y custom hooks', i:'Muestras cosas según el estado con && o con el ternario: un indicador mientras carga, un error si falla. Cuando repites lógica en varios componentes, la sacas a un custom hook: una función que empieza con use.',
+    c:`function useTareas() {
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [cargando, setCargando] = useState(true);
+  useEffect(() => {
+    fetch("/api/tareas").then(r => r.json()).then(setTareas)
+      .finally(() => setCargando(false));
+  }, []);
+  return { tareas, cargando };
+}
+
+const { tareas, cargando } = useTareas();
+return cargando ? <Spinner /> : <Lista tareas={tareas} />;`,
+    k:'Usa && o el ternario para mostrar según el estado. Un custom hook reutiliza lógica y empieza con use.',
+    q:['¿Cómo debe empezar el nombre de un custom hook?',['con get','con use','con hook_'],1,'React reconoce los hooks por el prefijo use y aplica sus reglas.'] },
+  { key:'tailwind', t:'Estilos con Tailwind', i:'Tailwind es la forma más usada hoy de dar estilo en React y Next.js. En vez de escribir CSS aparte, combinas clases pequeñas en el JSX. Es rápido y todo el equipo usa la misma escala de espacios y colores.',
+    c:`<button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+  Guardar
+</button>
+
+<div className="grid gap-4 md:grid-cols-3">...</div>`,
+    k:'Tailwind da estilo con clases utilitarias en el JSX. md: aplica la clase desde pantallas medianas.',
+    q:['En Tailwind, ¿qué hace md:grid-cols-3?',['Siempre 3 columnas','3 columnas desde pantallas medianas en adelante','Un margen de 3'],1,'Los prefijos como md: y lg: activan la clase según el ancho de la pantalla.'] },
+ ], retos:[
+  { code:`<input ___={texto} ___={e => setTexto(e.target.value)} />
+<form ___={guardar}>`, ans:['value','onChange','onSubmit'], chips:['onSubmit','onClick','value','onChange'] },
+  { code:`{cargando ___ <Spinner />}
+{error ? <Error /> ___ <Lista />}
+function ___Tareas() { ... }`, ans:['&&',':','use'], chips:['use','?',':','&&','get'] },
+ ]},
+
+ next: { ls:[
+  { key:'actions', t:'Server Actions', i:'Con Server Actions un formulario llama directamente una función del servidor, sin crear un endpoint a mano. Marcas la función con "use server" y la pasas al atributo action del formulario.',
+    c:`// app/tareas/page.tsx
+async function crearTarea(formData: FormData) {
+  "use server";
+  const texto = String(formData.get("texto"));
+  await db.tarea.create({ data: { texto } });
+  revalidatePath("/tareas");
+}
+
+export default function Page() {
+  return (
+    <form action={crearTarea}>
+      <input name="texto" />
+      <button>Agregar</button>
+    </form>
+  );
+}`,
+    k:'Una Server Action es una función con "use server" que el formulario ejecuta en el servidor.',
+    q:['¿Qué hace revalidatePath("/tareas")?',['Borra la página','Vuelve a generar la página con los datos nuevos','Cambia la URL'],1,'Le dice a Next.js que los datos cambiaron y que actualice esa ruta.'] },
+  { key:'dinamicas', t:'Rutas dinámicas y SEO', i:'Una carpeta con corchetes, como [id], crea rutas dinámicas: /productos/1 y /productos/2 usan el mismo archivo. Con generateMetadata cada página tiene su propio título para Google. En Next.js 15 o más, params llega como promesa.',
+    c:`// app/productos/[id]/page.tsx
+type Props = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: Props) {
+  const { id } = await params;
+  const p = await db.producto.findUnique({ where: { id: Number(id) } });
+  return { title: p?.nombre ?? "Producto" };
+}
+
+export default async function Producto({ params }: Props) {
+  const { id } = await params;
+  const p = await db.producto.findUnique({ where: { id: Number(id) } });
+  if (!p) notFound();
+  return <h1>{p.nombre}</h1>;
+}`,
+    k:'[id] en el nombre de la carpeta crea una ruta dinámica. params es una promesa: usa await.',
+    q:['¿Qué URL atiende app/blog/[slug]/page.tsx?',['Solo /blog','/blog/cualquier-cosa','/slug'],1,'[slug] captura cualquier valor en esa posición de la URL.'] },
+ ], retos:[
+  { code:`async function guardar(formData: FormData) {
+  "___";
+  const texto = formData.___("texto");
+}
+<form ___={guardar}>`, ans:['use server','get','action'], chips:['action','use client','get','use server','onSubmit'] },
+  { code:`// app/productos/___/page.tsx
+const { id } = ___ params;
+if (!producto) ___();`, ans:['[id]','await','notFound'], chips:['notFound','{id}','await','[id]','redirect'] },
+ ]},
+
+ node: { ls:[
+  { key:'middleware', t:'Middlewares en Express', i:'Un middleware es una función que corre antes de tus rutas: registra cada petición, revisa el token o maneja errores. Recibe req, res y next, y llama next() para seguir.',
+    c:`function requiereLogin(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: "Inicia sesión" });
+  req.user = jwt.verify(token, process.env.JWT_SECRET);
+  next();
+}
+
+app.get("/perfil", requiereLogin, (req, res) => res.json(req.user));`,
+    k:'Un middleware recibe req, res y next. Llama next() para continuar o responde para cortar.',
+    q:['En un middleware, ¿qué pasa si no llamas next() ni respondes?',['Sigue a la ruta','La petición se queda esperando','Express se reinicia'],1,'El cliente espera para siempre. Siempre llama next() o envía una respuesta.'] },
+  { key:'env', t:'Variables de entorno', i:'Las claves, contraseñas y direcciones de la base de datos nunca van en el código. Van en variables de entorno: un archivo .env en tu computador, que nunca subes a GitHub, y la configuración del hosting en producción.',
+    c:`# .env  (agrégalo a .gitignore)
+DATABASE_URL="postgresql://user:pass@localhost:5432/app"
+JWT_SECRET="cadena-larga-y-aleatoria"
+
+// En el código
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error("Falta DATABASE_URL");`,
+    k:'Los secretos van en variables de entorno. El archivo .env va en .gitignore.',
+    q:['¿Dónde guardas la clave de tu base de datos?',['En el código, en una constante','En una variable de entorno, fuera de Git','En el README'],1,'Si subes una clave a GitHub, alguien puede encontrarla en minutos.'] },
+  { key:'tests', t:'Pruebas con Vitest', i:'Una prueba es código que revisa que tu código funcione. Con Vitest describes qué debería pasar y compruebas el resultado con expect. Casi todas las empresas preguntan por pruebas en las entrevistas.',
+    c:`// carrito.test.ts
+import { describe, it, expect } from "vitest";
+import { totalCarrito } from "./carrito";
+
+describe("totalCarrito", () => {
+  it("suma los precios", () => {
+    expect(totalCarrito([10, 20])).toBe(30);
+  });
+  it("devuelve 0 si está vacío", () => {
+    expect(totalCarrito([])).toBe(0);
+  });
+});`,
+    k:'Una prueba ejecuta tu función y compara el resultado con expect. Se corre con npx vitest.',
+    q:['¿Qué hace expect(x).toBe(30)?',['Asigna 30 a x','Comprueba que x sea 30','Imprime 30'],1,'Si x no es 30, la prueba falla y te muestra qué valor llegó.'] },
+ ], retos:[
+  { code:`function auth(req, res, ___) {
+  if (!req.cookies.token) return res.___(401).json({ error: "No autorizado" });
+  next();
+}
+const secreto = process.___.JWT_SECRET;`, ans:['next','status','env'], chips:['env','next','status','send'] },
+  { code:`___("suma 2 + 2", () => {
+  ___(sumar(2, 2)).___(4);
+});`, ans:['it','expect','toBe'], chips:['toBe','it','expect','assert'] },
+ ]},
+
+ db: { ls:[
+  { key:'groupby', t:'Reportes con GROUP BY', i:'Para reportes usas funciones de agregación: COUNT cuenta, SUM suma y AVG promedia. Con GROUP BY calculas por grupo, por ejemplo ventas por vendedor. HAVING filtra los grupos.',
+    c:`SELECT vendedor, COUNT(*) AS ventas, SUM(total) AS ingresos
+FROM pedidos
+GROUP BY vendedor
+HAVING SUM(total) > 1000
+ORDER BY ingresos DESC;`,
+    k:'GROUP BY agrupa filas y COUNT, SUM y AVG calculan por grupo. HAVING filtra grupos.',
+    q:['¿Qué usas para contar pedidos por cliente?',['COUNT con GROUP BY cliente','ORDER BY cliente','DELETE'],0,'GROUP BY forma un grupo por cliente y COUNT cuenta sus filas.'] },
+  { key:'transacciones', t:'Transacciones', i:'Una transacción agrupa varias operaciones que deben pasar todas o ninguna. En una transferencia, restar de una cuenta y sumar a otra van juntas: si una falla, todo se deshace.',
+    c:`-- SQL
+BEGIN;
+UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;
+UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;
+COMMIT;   -- si algo falla: ROLLBACK
+
+// Prisma
+await prisma.$transaction([restar, sumar]);`,
+    k:'Una transacción hace que varias operaciones pasen todas juntas o ninguna.',
+    q:['En una transferencia falla la segunda operación. ¿Qué hace la transacción?',['Deja la primera hecha','Deshace todo','Repite la segunda para siempre'],1,'Con ROLLBACK nada queda a medias: el dinero no desaparece.'] },
+  { key:'migraciones', t:'Migraciones', i:'Las migraciones son el historial de cambios de tu base de datos, como Git para las tablas. Cambias el esquema, generas una migración y la aplicas igual en tu computador y en producción.',
+    c:`# 1. Cambias schema.prisma (por ejemplo, agregas un campo)
+# 2. Generas y aplicas la migración en desarrollo
+npx prisma migrate dev --name agrega_prioridad
+# 3. En producción aplicas las migraciones pendientes
+npx prisma migrate deploy`,
+    k:'Una migración registra cada cambio del esquema para aplicarlo igual en todos los entornos.',
+    q:['¿Qué comando aplica las migraciones en producción con Prisma?',['prisma migrate deploy','prisma studio','npm start'],0,'migrate dev es para desarrollo; migrate deploy aplica las pendientes en producción.'] },
+ ], retos:[
+  { code:`SELECT ciudad, ___(*) AS clientes
+FROM clientes
+___ ___ ciudad;`, ans:['COUNT','GROUP','BY'], chips:['BY','SUM','GROUP','COUNT','ORDER'] },
+  { code:`SELECT u.nombre, p.total
+FROM usuarios u
+___ pedidos p ___ p.usuario_id = u.id
+___ p.total > 100;`, ans:['JOIN','ON','WHERE'], chips:['WHERE','ON','JOIN','FROM'] },
+ ]},
+
+ cloud: { ls:[
+  { key:'conflictos', t:'Conflictos en Git', i:'Un conflicto ocurre cuando dos personas cambian la misma línea. Git te muestra las dos versiones entre marcas: eliges cuál queda, borras las marcas y haces commit. Antes de empezar a trabajar, trae lo último con git pull.',
+    c:`<<<<<<< HEAD
+const precio = 100;
+=======
+const precio = 120;
+>>>>>>> feature/descuentos
+
+# Dejas la versión correcta, borras las marcas y:
+git add .
+git commit -m "Resuelve conflicto de precio"`,
+    k:'En un conflicto eliges la versión correcta, borras las marcas y haces commit.',
+    q:['¿Qué haces antes de empezar a trabajar cada día?',['git pull para traer lo último','git push --force','Borrar la carpeta'],0,'Traer los cambios del equipo primero reduce los conflictos.'] },
+  { key:'compose', t:'Docker Compose', i:'Docker Compose levanta varios contenedores juntos con un solo comando, por ejemplo tu API y su base de datos. Todo el equipo tiene el mismo entorno en segundos.',
+    c:`# docker-compose.yml
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: secreto
+    ports: ["5432:5432"]
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://postgres:secreto@db:5432/postgres
+    depends_on: [db]
+
+# docker compose up`,
+    k:'Docker Compose describe varios servicios en un archivo y los levanta juntos con docker compose up.',
+    q:['En Compose, ¿cómo se conecta la API a la base de datos?',['Por el nombre del servicio, db','Por la IP del computador','No se puede'],0,'Dentro de Compose cada servicio se encuentra por su nombre, como db:5432.'] },
+  { key:'terraform', t:'Infraestructura como código', i:'Infraestructura como código significa describir tus servidores, bases de datos y permisos en archivos, en vez de hacer clics en la consola. Terraform es la herramienta más usada, y es justo la habilidad con mayor prima salarial.',
+    c:`# main.tf
+resource "aws_s3_bucket" "imagenes" {
+  bucket = "mi-app-imagenes"
+}
+
+# terraform plan    → muestra qué va a cambiar
+# terraform apply   → lo crea en AWS`,
+    k:'Con Terraform describes la nube en archivos. plan muestra los cambios y apply los aplica.',
+    q:['¿Qué comando de Terraform muestra los cambios sin aplicarlos?',['terraform apply','terraform plan','terraform destroy'],1,'Revisa siempre el plan antes de aplicar, sobre todo en producción.'] },
+ ], retos:[
+  { code:`___ node:22-alpine
+___ /app
+COPY . .
+___ npm ci
+CMD ["npm", "start"]`, ans:['FROM','WORKDIR','RUN'], chips:['RUN','FROM','CMD','WORKDIR'] },
+  { code:`terraform ___        # ver qué va a cambiar
+terraform ___        # aplicar los cambios
+docker compose ___   # levantar todos los servicios`, ans:['plan','apply','up'], chips:['apply','up','plan','push'] },
+ ]},
+
+ ia: { ls:[
+  { key:'streaming', t:'Respuestas en streaming', i:'Las respuestas de IA tardan unos segundos. Con streaming muestras el texto a medida que el modelo lo escribe, como en los chats. La app se siente mucho más rápida aunque el tiempo total sea el mismo.',
+    c:`const stream = client.messages.stream({
+  model: "claude-sonnet-5",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: pregunta }],
+});
+
+stream.on("text", (texto) => enviarAlCliente(texto));
+const final = await stream.finalMessage();`,
+    k:'Con streaming muestras la respuesta mientras se genera y la app se siente más rápida.',
+    q:['¿Qué mejora el streaming?',['El precio','La sensación de velocidad para el usuario','La precisión del modelo'],1,'El usuario ve texto al instante en vez de esperar la respuesta completa.'] },
+  { key:'json', t:'Respuestas en JSON', i:'Para usar la respuesta en tu código necesitas datos, no párrafos. Pide JSON con una forma exacta y valida la respuesta con Zod antes de guardarla, igual que validas lo que envía un usuario.',
+    c:`const prompt = \`Extrae los datos de esta factura. Responde solo con JSON:
+{"proveedor": string, "total": number, "fecha": "AAAA-MM-DD"}
+
+Factura: \${texto}\`;
+
+const Factura = z.object({ proveedor: z.string(), total: z.number(), fecha: z.string() });
+const datos = Factura.parse(JSON.parse(respuesta));`,
+    k:'Pide JSON con una forma exacta y valídalo con Zod antes de usarlo.',
+    q:['¿Por qué validar con Zod el JSON que devuelve el modelo?',['Porque a veces se equivoca en la forma','Porque Zod lo hace más rápido','No hace falta'],0,'Nunca confíes ciegamente en la salida del modelo.'] },
+  { key:'costos', t:'Costos y evaluación', i:'Cada llamada cuesta según los tokens de entrada y salida. Limita max_tokens, guarda en caché las respuestas repetidas y usa el modelo más pequeño que resuelva bien la tarea. Antes de lanzar, prueba tu prompt con ejemplos reales.',
+    c:`Tarea                          Modelo sugerido
+Clasificar o extraer datos     Haiku (rápido y barato)
+Chat y tareas generales        Sonnet
+Razonamiento difícil y código  Opus
+
+Evaluación: 20 ejemplos reales → respuesta esperada → mide aciertos`,
+    k:'Usa el modelo más pequeño que funcione, limita max_tokens y mide con ejemplos reales.',
+    q:['Para clasificar miles de correos al día, ¿qué conviene?',['El modelo más grande siempre','Un modelo pequeño y rápido, medido con ejemplos','No poner límites'],1,'Para tareas simples, un modelo pequeño da la misma calidad por mucho menos dinero.'] },
+ ], retos:[
+  { code:`const stream = client.messages.___({ ... });
+stream.___("text", (t) => mostrar(t));
+const final = ___ stream.finalMessage();`, ans:['stream','on','await'], chips:['await','create','on','stream'] },
+  { code:`const Factura = z.___({ total: z.___() });
+const datos = Factura.___(JSON.parse(texto));`, ans:['object','number','parse'], chips:['parse','string','object','number'] },
+ ]},
+
+ movil: { ls:[
+  { key:'router', t:'Navegación con Expo Router', i:'Expo Router usa carpetas para las pantallas, igual que Next.js. Cada archivo dentro de app es una pantalla, y Link te lleva de una a otra.',
+    c:`app/
+  index.tsx        → pantalla de inicio
+  tarea/[id].tsx   → detalle de una tarea
+
+import { Link, useLocalSearchParams } from "expo-router";
+<Link href={\`/tarea/\${t.id}\`}>Ver detalle</Link>
+
+// en tarea/[id].tsx
+const { id } = useLocalSearchParams();`,
+    k:'Expo Router crea pantallas con carpetas. Link navega y useLocalSearchParams lee los parámetros.',
+    q:['En Expo Router, ¿qué pantalla crea app/perfil.tsx?',['/perfil','/app','Ninguna'],0,'Igual que en Next.js, el nombre del archivo es la ruta.'] },
+  { key:'storage', t:'Guardar datos en el celular', i:'Para que la app recuerde cosas sin internet, guarda datos en el dispositivo. AsyncStorage sirve para datos simples, SecureStore para tokens y contraseñas, y SQLite para listas grandes.',
+    c:`import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+
+await AsyncStorage.setItem("tema", "oscuro");
+const tema = await AsyncStorage.getItem("tema");
+
+await SecureStore.setItemAsync("token", token);   // cifrado`,
+    k:'AsyncStorage para datos simples, SecureStore para secretos y SQLite para muchos datos.',
+    q:['¿Dónde guardas el token de sesión en el celular?',['AsyncStorage','SecureStore','En una variable global'],1,'SecureStore cifra el dato con el almacenamiento seguro del sistema.'] },
+  { key:'eas', t:'Publicar con EAS', i:'EAS Build compila tu app en la nube de Expo, sin Android Studio ni un Mac. EAS Submit la sube a Google Play o App Store. Google Play cobra 25 dólares una sola vez y Apple 99 al año.',
+    c:`npm install -g eas-cli
+eas build --platform android    # genera el archivo para Google Play
+eas submit --platform android   # lo sube a la tienda
+eas update                      # envía cambios de JS sin pasar por la tienda`,
+    k:'EAS Build compila en la nube, EAS Submit publica y EAS Update envía cambios rápidos.',
+    q:['¿Qué comando envía una corrección de JavaScript sin pasar por la tienda?',['eas update','eas build','npm start'],0,'eas update publica cambios de JS; los cambios nativos sí requieren un build nuevo.'] },
+ ], retos:[
+  { code:`<___ href="/perfil">Mi perfil</Link>
+const { id } = ___();
+await SecureStore.___("token", token);`, ans:['Link','useLocalSearchParams','setItemAsync'], chips:['setItemAsync','Link','useLocalSearchParams','a'] },
+  { code:`eas ___ --platform android
+eas ___ --platform android
+eas ___`, ans:['build','submit','update'], chips:['update','submit','build','deploy'] },
+ ]},
+
+ empleo: { ls:[
+  { key:'estudiar', at:0, t:'Cómo estudiar sin estancarte', i:'Evita el infierno de los tutoriales: ver videos sin construir nada. Dedica una parte pequeña a aprender y la mayor parte a construir. Si llevas más de 30 minutos atascado, pide ayuda explicando lo que ya intentaste.',
+    c:`Semana tipo (30 min al día)
+Lunes a viernes:  10 min escuchar caminando + 20 min construir
+Sábado:           un proyecto pequeño de principio a fin
+Domingo:          repaso y subir a GitHub lo que hiciste
+
+Regla: 30 min atascado → pregunta con contexto`,
+    k:'Construye más de lo que miras. Pide ayuda después de 30 minutos atascado.',
+    q:['¿Qué es el infierno de los tutoriales?',['Ver cursos sin construir proyectos propios','Estudiar de noche','Aprender inglés'],0,'Se sale construyendo algo propio, aunque sea pequeño.'] },
+  { key:'ia-dev', t:'Programar con IA sin depender de ella', i:'Las empresas esperan que uses asistentes de IA para programar. La clave es entender todo lo que aceptas: lee el código, pide que te lo explique, escribe pruebas y nunca pegues secretos en el chat.',
+    c:`Buen prompt para programar:
+"Tengo una API en Express con Prisma. El endpoint POST /tareas
+devuelve 500 cuando el texto viene vacío. Este es el código: [...]
+Explícame la causa y propón la corrección con una prueba en Vitest."`,
+    k:'Usa la IA como compañero: da contexto, entiende cada línea y verifica con pruebas.',
+    q:['¿Qué NO debes pegar en un chat de IA?',['El mensaje de error','Claves y contraseñas de producción','Una función con un bug'],1,'Los secretos van solo en variables de entorno. Si se filtran, cámbialos de inmediato.'] },
+  { key:'salario', t:'Negociar tu salario', i:'Cuando te pregunten cuánto esperas ganar, llega con un rango investigado, no con un número al azar. Para trabajo remoto en dólares, compara en Glassdoor y levels.fyi. Di tu rango con calma y pregunta por el rango del puesto.',
+    c:`Pregunta: "¿Cuáles son tus expectativas salariales?"
+
+Respuesta: "Según mi investigación para roles junior full stack remotos,
+busco entre X y Y dólares al año. ¿Cuál es el rango para este puesto?"`,
+    k:'Investiga el rango, dilo con calma y pregunta por el rango del puesto.',
+    q:['¿Qué conviene decir sobre tu expectativa salarial?',['Un rango investigado','Lo que me quieran pagar','Un número muy bajo para asegurar el puesto'],0,'Un rango con respaldo muestra profesionalismo y te protege de cobrar de menos.'] },
+ ], retos:[
+  { code:`S: ___    → el contexto del problema
+T: ___    → lo que te tocaba lograr
+A: ___    → lo que hiciste tú
+R: ___    → el resultado medible`, ans:['Situación','Tarea','Acción','Resultado'], chips:['Acción','Resultado','Situación','Tarea'] },
+  { code:`# TaskFlow IA
+___: gestiona tareas y las divide en pasos con IA
+___: https://taskflow.vercel.app
+___: Next.js, PostgreSQL, Claude`, ans:['Qué hace','Demo','Stack'], chips:['Stack','Licencia','Demo','Qué hace'] },
+ ]},
+
+ python: { ls:[
+  { key:'dict', at:1, t:'Diccionarios, funciones y clases', i:'Los diccionarios de Python son como los objetos de JavaScript. Las funciones se crean con def y pueden tener valores por defecto. Las clases agrupan datos y comportamiento.',
+    c:`usuario = {"nombre": "Ana", "edad": 28}
+print(usuario["nombre"])
+
+def saludar(nombre, saludo="Hola"):
+    return f"{saludo}, {nombre}"
+
+class Tarea:
+    def __init__(self, texto):
+        self.texto = texto
+        self.hecha = False`,
+    k:'dict guarda datos con clave, def crea funciones y class define objetos con __init__.',
+    q:['¿Qué palabra crea una función en Python?',['function','def','fn'],1,'def nombre(parámetros): y el cuerpo va con sangría.'] },
+  { key:'venv', t:'Entornos virtuales y paquetes', i:'Cada proyecto de Python debe tener su entorno virtual: una carpeta con sus propias librerías, para que un proyecto no rompa a otro. Instalas paquetes con pip y guardas la lista en requirements.txt.',
+    c:`python -m venv .venv
+# Windows: .venv\\Scripts\\activate    Mac o Linux: source .venv/bin/activate
+pip install fastapi uvicorn pandas
+pip freeze > requirements.txt
+# otra persona instala todo con: pip install -r requirements.txt`,
+    k:'Usa un entorno virtual por proyecto y guarda las dependencias en requirements.txt.',
+    q:['¿Para qué sirve un entorno virtual?',['Para que cada proyecto tenga sus propias librerías','Para correr Python en el navegador','Para acelerar el wifi'],0,'Evita que actualizar una librería en un proyecto rompa otro.'] },
+  { key:'requests', t:'Consumir APIs con requests', i:'Con la librería requests llamas cualquier API en pocas líneas. Es la base de muchas automatizaciones: traer datos de un servicio, transformarlos y guardarlos o enviarlos a otro lugar.',
+    c:`import requests
+
+res = requests.get("https://api.github.com/users/juanpacas", timeout=10)
+res.raise_for_status()          # lanza error si no es 2xx
+datos = res.json()
+print(datos["public_repos"])`,
+    k:'requests.get llama una API, raise_for_status detecta errores y .json() convierte la respuesta.',
+    q:['¿Qué hace res.raise_for_status()?',['Lanza un error si la respuesta no fue exitosa','Imprime el estado','Repite la petición'],0,'Así no sigues trabajando con una respuesta de error sin darte cuenta.'] },
+ ], retos:[
+  { code:`___ Tarea:
+    ___ __init__(self, texto):
+        ___.texto = texto`, ans:['class','def','self'], chips:['self','this','def','class'] },
+  { code:`import ___
+res = requests.___("https://api.ejemplo.com/datos", timeout=10)
+datos = res.___()`, ans:['requests','get','json'], chips:['json','get','requests','fetch'] },
+ ]},
+
+ go: { ls:[
+  { key:'structs', at:1, t:'Structs y métodos', i:'Go no tiene clases: usa structs para agrupar datos y métodos para darles comportamiento. Las etiquetas entre comillas invertidas indican cómo se llama cada campo en JSON.',
+    c:`type Tarea struct {
+    ID    int    \`json:"id"\`
+    Texto string \`json:"texto"\`
+    Hecha bool   \`json:"hecha"\`
+}
+
+func (t *Tarea) Completar() {
+    t.Hecha = true
+}`,
+    k:'Un struct agrupa datos y un método se declara con un receptor, como (t *Tarea).',
+    q:['¿Cómo agrupa datos Go si no tiene clases?',['Con structs','Con diccionarios','Con módulos'],0,'Los structs con métodos cubren lo que en otros lenguajes hacen las clases.'] },
+  { key:'errores', t:'Errores como valores', i:'En Go las funciones devuelven el resultado y un error, y revisas el error justo después de cada llamada. Es más largo de escribir, pero nunca te sorprende una excepción escondida.',
+    c:`func buscarTarea(id int) (*Tarea, error) {
+    t, ok := tareas[id]
+    if !ok {
+        return nil, fmt.Errorf("tarea %d no existe", id)
+    }
+    return t, nil
+}
+
+t, err := buscarTarea(7)
+if err != nil {
+    log.Println(err)
+    return
+}`,
+    k:'En Go los errores son valores: la función devuelve (resultado, error) y revisas if err != nil.',
+    q:['¿Qué devuelve una función de Go que puede fallar?',['Solo el resultado','El resultado y un error','Una excepción'],1,'Si err no es nil, algo falló y debes manejarlo.'] },
+ ], retos:[
+  { code:`___ Usuario ___ {
+    Nombre string
+}`, ans:['type','struct'], chips:['struct','class','type','interface'] },
+  { code:`t, ___ := buscarTarea(7)
+if err ___ nil {
+    ___ err
+}`, ans:['err','!=','return'], chips:['return','==','err','!='] },
+ ]},
+
+ pa: { ls:[
+  { key:'aprobaciones', t:'Variables y aprobaciones', i:'Las variables guardan valores mientras corre el flujo, por ejemplo un total. La acción de aprobaciones envía una solicitud a una persona por Teams o correo, y el flujo espera su respuesta para continuar.',
+    c:`Inicializar variable:  total (entero) = 0
+Aplicar a cada uno:    filas del Excel
+    Incrementar variable: total + Monto
+Iniciar y esperar una aprobación:
+    Asignado a: jefe@empresa.com
+    Detalles:   Gasto total: @{variables('total')}
+Condición: resultado es "Approve" → registrar el pago`,
+    k:'Las variables guardan valores durante el flujo. Las aprobaciones lo pausan hasta que una persona decide.',
+    q:['¿Qué hace "Iniciar y esperar una aprobación"?',['Aprueba todo automáticamente','Envía la solicitud y pausa el flujo hasta la respuesta','Borra el flujo'],1,'Es ideal para gastos, vacaciones o compras que alguien debe autorizar.'] },
+  { key:'fallos', t:'Cuando un flujo falla', i:'Los flujos también fallan: un archivo que no existe o un servicio caído. Con un ámbito de captura y Configurar ejecución posterior decides qué hacer si algo falla, como avisar por Teams. Ponle nombres claros a cada acción.',
+    c:`Ámbito "Intentar":   acciones principales
+Ámbito "Capturar":   Configurar ejecución posterior → "ha fallado"
+    Publicar en Teams: "El flujo de facturas falló"
+
+Buenas prácticas:
+- Nombres claros: "Obtener facturas pendientes", no "Acción 3"
+- Probar con datos de ejemplo antes de activarlo`,
+    k:'Usa los ámbitos Intentar y Capturar con Configurar ejecución posterior para manejar fallos.',
+    q:['¿Cómo haces que un flujo avise cuando algo falla?',['Configurar ejecución posterior en un ámbito de captura','Borrando las acciones','No se puede'],0,'Así te enteras del error en vez de descubrirlo días después.'] },
+ ], retos:[
+  { code:`___ variable: total = 0
+Aplicar a cada uno: filas
+    ___ variable: total + Monto
+Iniciar y esperar una ___`, ans:['Inicializar','Incrementar','aprobación'], chips:['aprobación','Incrementar','Disparador','Inicializar'] },
+  { code:`Ámbito "___": acciones principales
+Ámbito "___": si falla, avisar en Teams
+Configurar ejecución ___ → ha fallado`, ans:['Intentar','Capturar','posterior'], chips:['posterior','Capturar','Intentar','anterior'] },
+ ]},
+
+ agentes: { ls:[
+  { key:'mcp', t:'MCP: conectar herramientas a la IA', i:'MCP, Model Context Protocol, es un estándar abierto para conectar modelos de IA con herramientas y datos: tu base de datos, tu calendario o tu CRM. Escribes un servidor MCP una vez y cualquier cliente compatible puede usarlo.',
+    c:`Servidor MCP "tareas"
+  herramientas:  listar_tareas, crear_tarea, completar_tarea
+  recursos:      tareas://pendientes
+
+Cliente (Claude, tu agente o tu editor)
+  → descubre las herramientas
+  → las llama cuando las necesita`,
+    k:'MCP es un estándar para conectar la IA con herramientas y datos. Un servidor sirve a muchos clientes.',
+    q:['¿Qué resuelve MCP?',['Conectar modelos de IA con herramientas de forma estándar','Diseñar logos','Comprimir imágenes'],0,'Antes cada integración se hacía a mano; con MCP se hace una sola vez.'] },
+  { key:'resumen', t:'Ejemplo: resumen diario de correos', i:'Un flujo que muchos freelancers venden: cada mañana n8n lee los correos nuevos, la IA los resume y marca los urgentes, y el resumen llega por Telegram o Slack. Se construye en una tarde y ahorra horas cada semana.',
+    c:`[Cron]      todos los días a las 7:00
+   ↓
+[Gmail]     correos no leídos de las últimas 24 horas
+   ↓
+[IA]        "Resume cada correo en una línea y marca URGENTE si requiere acción hoy"
+   ↓
+[Telegram]  envía el resumen al dueño del negocio`,
+    k:'Disparador programado, datos, IA que resume y envío por un canal: la receta de muchas automatizaciones.',
+    q:['¿Qué nodo inicia un flujo que corre todos los días a la misma hora?',['Webhook','Cron o Schedule','IF'],1,'El disparador programado ejecuta el flujo sin que nadie haga nada.'] },
+ ], retos:[
+  { code:`Agente
+  ___:         Claude
+  ___:   buscar_pedido, crear_ticket
+  ___:         últimos 10 mensajes`, ans:['Modelo','Herramientas','Memoria'], chips:['Memoria','Modelo','Herramientas','Colores'] },
+  { code:`[___] todos los días a las 7:00
+   ↓
+[Gmail] correos no leídos
+   ↓
+[___] resume y marca los urgentes
+   ↓
+[___] envía el resumen`, ans:['Cron','IA','Telegram'], chips:['Telegram','Webhook','IA','Cron'] },
+ ]},
+};
+
+/* Une las lecciones y retos nuevos a cada módulo sin cambiar el progreso guardado */
+MODS.forEach(m => {
+  m.ls.forEach((ls, i) => { ls.key = String(i); });
+  const extra = MAS[m.id] || {};
+  (extra.ls || []).forEach(ls => { m.ls.splice(ls.at ?? m.ls.length, 0, ls); });
+  m.retos = [m.reto, ...(extra.retos || [])];
+});
+const retoKey = (m, k) => k === 0 ? MODS[m].id : MODS[m].id + '-r' + k;
+function retosDone(m){ return MODS[m].retos.filter((_, k) => S.retos[retoKey(m, k)]).length; }
+function firstPendingReto(m){ const k = MODS[m].retos.findIndex((_, k) => !S.retos[retoKey(m, k)]); return k < 0 ? 0 : k; }
+
 const LEVELS = [[0,'Aprendiz'],[150,'Trainee'],[400,'Junior'],[800,'Semi-senior'],[1300,'Senior'],[2000,'Arquitecto']];
 const DAILY_GOAL = 40;
 const SAL = [
@@ -909,7 +1526,7 @@ function levelInfo(){
   const cur = LEVELS[i], nxt = LEVELS[i+1];
   return { name:cur[1], next: nxt ? nxt[1] : null, pct: nxt ? (S.xp - cur[0]) / (nxt[0] - cur[0]) : 1, need: nxt ? nxt[0] - S.xp : 0 };
 }
-const lid = (m,l) => MODS[m].id + '-' + l;
+const lid = (m,l) => MODS[m].id + '-' + MODS[m].ls[l].key;
 function modDone(m){ return MODS[m].ls.filter((_,l) => S.done[lid(m,l)]).length; }
 function nextLesson(){ for (let m = 0; m < MODS.length; m++) for (let l = 0; l < MODS[m].ls.length; l++) if (!S.done[lid(m,l)]) return [m,l]; return null; }
 const TOTAL = MODS.reduce((a,m) => a + m.ls.length, 0);
@@ -1040,7 +1657,7 @@ function viewHome(){
     return `${head}<button class="station ${all?'done':''} ${now?'now':''}" data-act="mod" data-m="${i}">
       <span class="dot">${all ? ICON.check.replace('<svg','<svg width="20" height="20"') : pad(i+1)}</span>
       <span><span class="st-t">${esc(m.n)}${m.tag?'<span class="tag">'+esc(m.tag)+'</span>':''}</span><span class="st-d">${esc(m.d)}</span></span>
-      <span class="count">${d}/${m.ls.length}${S.retos[m.id]?' · reto':''}</span>
+      <span class="count">${d}/${m.ls.length}<br><small>retos ${retosDone(i)}/${m.retos.length}</small></span>
     </button>`; }).join('')}</div>`;
 }
 function viewMod(){
@@ -1057,11 +1674,12 @@ function viewMod(){
       <span><b>${esc(ls.t)}</b><br><small>${S.heard[lid(V.m,l)] ? 'Escuchada · ' : ''}4 min</small></span>
       <span class="muted">${ICON.back.replace('M15 18l-6-6 6-6','M9 18l6-6-6-6').replace('<svg','<svg width="20" height="20"')}</span>
     </button>`).join('')}
-    <button class="lesson-row ${S.retos[m.id]?'done':''}" data-act="reto" data-m="${V.m}">
-      <span class="check">${S.retos[m.id] ? ICON.check : ''}</span>
-      <span><b>Reto: completa el código</b><br><small>Con el pulgar, sin teclado · +20 XP</small></span>
+    <h3 style="margin-top:8px">Retos · ${retosDone(V.m)} de ${m.retos.length}</h3>
+    ${m.retos.map((r,k) => { const ok = S.retos[retoKey(V.m,k)]; return `<button class="lesson-row ${ok?'done':''}" data-act="reto" data-m="${V.m}" data-k="${k}">
+      <span class="check">${ok ? ICON.check : ''}</span>
+      <span><b>Reto ${k+1}: completa el código</b><br><small>Con el pulgar, sin teclado · +20 XP</small></span>
       <span class="muted">${ICON.code.replace('<svg','<svg width="20" height="20"')}</span>
-    </button></div>
+    </button>`; }).join('')}</div>
   </div>`;
 }
 function viewLesson(){
@@ -1088,9 +1706,10 @@ function viewLesson(){
       <button class="btn block" data-act="mod" data-m="${V.m}">Volver al módulo</button>`}
   </div>`;
 }
-function newReto(m){ const r = MODS[m].reto; R = { m, fill: r.ans.map(() => null), used: {}, checked:false, order: shuffle(r.chips.map((c,i)=>i)) }; }
+function newReto(m, k){ const r = MODS[m].retos[k]; R = { m, k, fill: r.ans.map(() => null), used: {}, checked:false, order: shuffle(r.chips.map((c,i)=>i)) }; }
 function viewReto(){
-  const m = MODS[V.m], r = m.reto, parts = r.code.split('___');
+  const m = MODS[V.m], r = m.retos[R.k], parts = r.code.split('___');
+  const nextK = R.k + 1 < m.retos.length ? R.k + 1 : -1;
   let html = '';
   parts.forEach((p,i) => {
     html += hl(p);
@@ -1103,13 +1722,14 @@ function viewReto(){
   const win = R.checked && R.fill.every((f,i) => r.chips[f] === r.ans[i]);
   return `<button class="back" data-act="mod" data-m="${V.m}">${ICON.back}${esc(m.n)}</button>
   <div class="stack">
-    <p class="eyebrow">Reto del módulo ${V.m+1}</p>
+    <p class="eyebrow">Módulo ${V.m+1} · Reto ${R.k+1} de ${m.retos.length}</p>
     <h2>Completa el código</h2>
     <p class="muted">Toca una pieza para ponerla en el siguiente espacio vacío. Toca un espacio para quitarla.</p>
     <pre class="code">${html}</pre>
     <div class="chips">${R.order.map(i => `<button class="piece" data-act="fill" data-c="${i}" ${R.used[i]||R.checked?'disabled':''}>${esc(r.chips[i])}</button>`).join('')}</div>
-    ${win ? `<div class="fb ok"><b>Reto superado</b>Ya dominas lo esencial de ${esc(m.n)}.</div>
-      ${V.m+1 < MODS.length ? `<button class="btn primary block" data-act="mod" data-m="${V.m+1}">Siguiente módulo: ${esc(MODS[V.m+1].n)}</button>` : `<button class="btn primary block" data-act="home">Volver a la ruta</button>`}`
+    ${win ? `<div class="fb ok"><b>Reto superado</b>${nextK >= 0 ? 'Vas muy bien. Sigue con el próximo reto.' : 'Completaste los retos de ' + esc(m.n) + '.'}</div>
+      ${nextK >= 0 ? `<button class="btn primary block" data-act="reto" data-m="${V.m}" data-k="${nextK}">Siguiente reto</button>`
+      : V.m+1 < MODS.length ? `<button class="btn primary block" data-act="mod" data-m="${V.m+1}">Siguiente módulo: ${esc(MODS[V.m+1].n)}</button>` : `<button class="btn primary block" data-act="home">Volver a la ruta</button>`}`
     : R.checked ? `<div class="fb no"><b>Revisa las marcadas en rojo</b>Las verdes ya están bien.</div><button class="btn primary block" data-act="retry">Intentar de nuevo</button>`
     : `<button class="btn primary block" data-act="check" ${full?'':'disabled'}>Comprobar</button>`}
   </div>`;
@@ -1570,14 +2190,14 @@ document.addEventListener('click', e => {
       V.picked = i; render();
       if (!S.done[id]){ S.done[id] = true; addXP(ok ? 10 : 5, ok ? 'Correcto' : 'Lección completa'); }
       break; }
-    case 'reto': newReto(+d.m); go({ tab:'ruta', screen:'reto', m:+d.m }); break;
+    case 'reto': { const m = +d.m; newReto(m, d.k !== undefined ? +d.k : firstPendingReto(m)); go({ tab:'ruta', screen:'reto', m }); break; }
     case 'fill': { const k = R.fill.indexOf(null); if (k < 0) break; R.fill[k] = +d.c; R.used[+d.c] = true; render(); break; }
     case 'unfill': { if (R.checked) break; const i = +d.i, f = R.fill[i]; if (f === null) break; delete R.used[f]; R.fill[i] = null; render(); break; }
     case 'check': {
-      R.checked = true; const r = MODS[V.m].reto, win = R.fill.every((f,i) => r.chips[f] === r.ans[i]);
-      render(); if (win && !S.retos[MODS[V.m].id]){ S.retos[MODS[V.m].id] = true; addXP(20,'Reto superado'); }
+      R.checked = true; const r = MODS[V.m].retos[R.k], key = retoKey(V.m, R.k), win = R.fill.every((f,i) => r.chips[f] === r.ans[i]);
+      render(); if (win && !S.retos[key]){ S.retos[key] = true; addXP(20,'Reto superado'); }
       break; }
-    case 'retry': { const r = MODS[V.m].reto; R.fill = R.fill.map((f,i) => f !== null && r.chips[f] === r.ans[i] ? f : null); R.used = {}; R.fill.forEach(f => { if (f !== null) R.used[f] = true; }); R.checked = false; render(); break; }
+    case 'retry': { const r = MODS[V.m].retos[R.k]; R.fill = R.fill.map((f,i) => f !== null && r.chips[f] === r.ans[i] ? f : null); R.used = {}; R.fill.forEach(f => { if (f !== null) R.used[f] = true; }); R.checked = false; render(); break; }
     case 'walkmod': if (IV && IV.hf){ IV.running = false; clearInterval(IV.int); } walkLoad(+d.m); W.playing = true; grabLock(); go({ tab:'caminar' }); walkStep(); break;
     case 'wplay':
       if (W.playing){ W.playing = false; hush(); releaseLock(); paintWalk(); }

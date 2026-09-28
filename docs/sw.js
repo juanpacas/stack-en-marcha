@@ -1,5 +1,5 @@
 // Service worker: guarda el curso para usarlo sin internet
-const CACHE = 'stack-en-marcha-6f04e523ac';
+const CACHE = 'stack-en-marcha-87bf8dc32b';
 const FONTS = 'stack-en-marcha-fonts';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
