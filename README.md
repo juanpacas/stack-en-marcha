@@ -6,7 +6,7 @@ Curso full stack para aprender desde el celular, incluso caminando y sin interne
 
 - 15 módulos, 94 microlecciones y 45 retos: TypeScript, React, Next.js, Node.js, PostgreSQL, nube, IA, React Native, Python, Go, Power Automate y agentes de IA.
 - Modo caminata: las lecciones se leen en voz alta, con preguntas y pausas para pensar.
-- Simulador de entrevistas con 26 preguntas reales, en modo manos libres o por escrito.
+- Simulador de entrevistas con 59 preguntas reales, en modo manos libres o por escrito.
 - Retos para completar código con el pulgar, tarjetas de repaso y quiz relámpago.
 - Funciona sin internet después de abrirlo una vez (PWA).
 
