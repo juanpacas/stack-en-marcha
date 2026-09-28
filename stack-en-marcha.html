@@ -1467,12 +1467,208 @@ Cliente (Claude, tu agente o tu editor)
  ]},
 };
 
+/* ---------- TANDA 3 DE RETOS: 3 más por módulo (siempre al final para no mover el progreso) ---------- */
+const MAS_RETOS = {
+ web: [
+  { code:`<___ action="/registro">
+  <___ for="email">Correo</label>
+  <input id="email" ___="email" required>
+  <button type="submit">Enviar</button>
+</form>`, ans:['form','label','type'], chips:['type','form','label','name','div'] },
+  { code:`.menu {
+  ___: flex;
+  justify-___: space-between;
+  align-items: ___;
+}`, ans:['display','content','center'], chips:['center','display','content','position'] },
+  { code:`___ /api/tareas HTTP/1.1
+Host: mi-app.com
+Content-___: application/json
+
+{ "texto": "Aprender HTML" }
+→ 201 ___`, ans:['POST','Type','Created'], chips:['Created','GET','Type','POST','OK'] },
+ ],
+ js: [
+  { code:`___ function cargar() {
+  const res = ___ fetch("/api/tareas");
+  return res.___();
+}`, ans:['async','await','json'], chips:['json','await','async','then'] },
+  { code:`const { nombre, ___ } = usuario;
+const copia = { ___usuario, activo: true };
+const todos = [...lista1, ___lista2];`, ans:['edad','...','...'], chips:['...','edad','...','=>'] },
+  { code:`const hayCaros = precios.___(p => p > 100);     // true o false
+const ana = usuarios.___(u => u.id === 7);        // un usuario
+const nombres = usuarios.___(u => u.nombre);      // lista de nombres`, ans:['some','find','map'], chips:['map','filter','some','find'] },
+ ],
+ ts: [
+  { code:`function sumar(a: ___, b: number): ___ {
+  return a + b;
+}
+const activo: ___ = true;`, ans:['number','number','boolean'], chips:['number','boolean','string','number'] },
+  { code:`function primero<___>(lista: T[]): T | ___ {
+  return lista[0];
+}
+const n = primero<___>([1, 2, 3]);`, ans:['T','undefined','number'], chips:['number','T','undefined','any'] },
+  { code:`type Tarea = {
+  texto: string;
+  etiquetas: string___;
+  fecha___: Date;     // opcional
+};`, ans:['[]','?'], chips:['?','[]','{}','!'] },
+ ],
+ react: [
+  { code:`___(() => {
+  document.title = \`\${n} tareas\`;
+}, [___]);`, ans:['useEffect','n'], chips:['n','useState','useEffect','[]'] },
+  { code:`function Boton({ texto, ___ }: { texto: string; onClick: () => void }) {
+  return <button ___={onClick}>{___}</button>;
+}`, ans:['onClick','onClick','texto'], chips:['texto','onClick','onClick','href'] },
+  { code:`<ul>
+  {tareas.___(t => (
+    <li ___={t.id}>{t.___}</li>
+  ))}
+</ul>`, ans:['map','key','texto'], chips:['texto','key','forEach','map','id'] },
+ ],
+ next: [
+  { code:`// app/api/tareas/route.ts
+export async function ___(req: Request) {
+  const body = await req.___();
+  return Response.json(body, { ___: 201 });
+}`, ans:['POST','json','status'], chips:['status','GET','json','POST','code'] },
+  { code:`"___";
+import { ___ } from "react";
+
+export default function Contador() {
+  const [n, setN] = useState(0);`, ans:['use client','useState'], chips:['use server','useState','use client','useEffect'] },
+  { code:`app/page.tsx              → ___
+app/blog/page.tsx         → ___
+app/blog/[slug]/page.tsx  → ___`, ans:['/','/blog','/blog/:slug'], chips:['/blog/:slug','/app','/','/blog'] },
+ ],
+ node: [
+  { code:`const app = ___();
+app.___(express.json());
+app.___(3000, () => console.log("Listo"));`, ans:['express','use','listen'], chips:['listen','use','express','get'] },
+  { code:`const Registro = z.___({
+  email: z.string().___(),
+  edad: z.number().___(18),
+});`, ans:['object','email','min'], chips:['min','email','object','max'] },
+  { code:`const hash = ___ bcrypt.___(password, 10);
+const ok = await bcrypt.___(intento, hash);`, ans:['await','hash','compare'], chips:['compare','await','hash','equals'] },
+ ],
+ db: [
+  { code:`___ INTO productos (nombre, precio) VALUES ('Mouse', 50);
+___ productos ___ precio = 45 WHERE nombre = 'Mouse';`, ans:['INSERT','UPDATE','SET'], chips:['SET','INSERT','UPDATE','ADD'] },
+  { code:`const pendientes = await prisma.tarea.___({
+  ___: { hecha: false },
+  ___: { creada: "desc" },
+});`, ans:['findMany','where','orderBy'], chips:['orderBy','findMany','where','sort'] },
+  { code:`CREATE ___ idx_email ___ usuarios(email);
+SELECT * FROM usuarios ___ email = 'ana@mail.com';`, ans:['INDEX','ON','WHERE'], chips:['WHERE','ON','INDEX','TABLE'] },
+ ],
+ cloud: [
+  { code:`git ___                 # traer lo último del equipo
+git ___ -b arreglo-login
+git push origin arreglo-login
+# y en GitHub abres un ___ ___`, ans:['pull','checkout','Pull','Request'], chips:['Request','pull','checkout','Pull','merge'] },
+  { code:`on: [___]
+jobs:
+  test:
+    ___: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - ___: npm test`, ans:['push','runs-on','run'], chips:['run','push','runs-on','uses'] },
+  { code:`Imágenes de usuarios    → AWS ___
+Base de datos Postgres  → AWS ___
+Contenedor de la API    → AWS ___`, ans:['S3','RDS','ECS'], chips:['ECS','S3','Lambda','RDS'] },
+ ],
+ ia: [
+  { code:`const msg = await client.___.create({
+  ___: "claude-sonnet-5",
+  ___: 1024,
+  messages: [{ role: "user", content: "Hola" }],
+});`, ans:['messages','model','max_tokens'], chips:['max_tokens','model','messages','tokens'] },
+  { code:`1. Convertir los documentos en ___
+2. ___ los fragmentos más parecidos a la pregunta
+3. Enviar pregunta + fragmentos al ___`, ans:['embeddings','Buscar','modelo'], chips:['modelo','Buscar','embeddings','Borrar'] },
+  { code:`messages: [
+  { role: "___", content: "¿Qué es RAG?" },
+  { role: "___", content: "Es buscar y luego generar..." },
+  { role: "user", content: "Dame un ejemplo" },
+]`, ans:['user','assistant'], chips:['assistant','system','user','bot'] },
+ ],
+ movil: [
+  { code:`<___ ___={() => guardar()}>
+  <Text>Guardar</Text>
+</Pressable>`, ans:['Pressable','onPress'], chips:['onPress','onClick','Pressable','button'] },
+  { code:`const estilos = StyleSheet.___({
+  caja: { ___: 16, backgroundColor: "#fff" },
+});
+<View ___={estilos.caja} />`, ans:['create','padding','style'], chips:['style','create','padding','className'] },
+  { code:`npx ___-expo-app mi-app
+cd mi-app
+npx expo ___      # escanea el QR con la app Expo ___`, ans:['create','start','Go'], chips:['Go','start','create','run'] },
+ ],
+ empleo: [
+  { code:`Proceso típico de contratación:
+1. Llamada con ___ humanos: cultura y expectativas
+2. Prueba ___: código en vivo o para la casa
+3. Entrevista con el ___ del equipo
+4. ___ de trabajo`, ans:['recursos','técnica','líder','Oferta'], chips:['Oferta','técnica','recursos','líder','Pago'] },
+  { code:`"Soy desarrollador ___ stack. Construí TaskFlow IA con Next.js y PostgreSQL,
+que está ___ en taskflow.vercel.app. Busco un equipo donde pueda ___."`, ans:['full','desplegado','aportar y crecer'], chips:['aportar y crecer','desplegado','full','cobrar más'] },
+  { code:`Aprender: ___ %      Construir: ___ %
+Atascado más de ___ minutos → pedir ayuda`, ans:['20','80','30'], chips:['80','30','20','5'] },
+ ],
+ python: [
+  { code:`pares = [n ___ n in numeros ___ n % 2 == 0]
+___ len(pares) > 0:
+    print("Hay pares")`, ans:['for','if','if'], chips:['if','for','if','while'] },
+  { code:`import pandas ___ pd
+df = pd.___("ventas.xlsx")
+total = df["monto"].___()`, ans:['as','read_excel','sum'], chips:['sum','read_excel','as','count'] },
+  { code:`@app.get("/tareas/{___}")
+def obtener(tarea_id: ___):
+    return {"id": tarea_id}`, ans:['tarea_id','int'], chips:['int','tarea_id','id','str'] },
+ ],
+ go: [
+  { code:`ch := ___(chan string)
+___ trabajar(ch)
+msg := ___ch`, ans:['make','go','<-'], chips:['<-','go','make','new'] },
+  { code:`http.___("GET /salud", salud)
+http.___(":8080", nil)`, ans:['HandleFunc','ListenAndServe'], chips:['ListenAndServe','Handle','HandleFunc','Serve'] },
+  { code:`nombres := []string{"Ana", "Luis"}
+___ i, n := ___ nombres {
+    fmt.___(i, n)
+}`, ans:['for','range','Println'], chips:['Println','range','for','print'] },
+ ],
+ pa: [
+  { code:`___: cuando llega un correo con adjunto
+Acción: guardar el ___ en OneDrive
+Acción: agregar una ___ en Excel`, ans:['Disparador','adjunto','fila'], chips:['fila','adjunto','Disparador','columna'] },
+  { code:`___(utcNow(), 'yyyy-MM-dd')
+___('Factura de ', triggerOutputs()?['body/from'])`, ans:['formatDateTime','concat'], chips:['concat','formatDateTime','join','date'] },
+  { code:`Conectar Outlook, Excel y Teams   → flujo de ___
+Llenar un sistema viejo sin API   → flujo de ___ (RPA)
+Llamar a tu propia API            → acción ___`, ans:['nube','escritorio','HTTP'], chips:['HTTP','escritorio','nube','SQL'] },
+ ],
+ agentes: [
+  { code:`[___] POST /nuevo-lead
+[IF] ¿el lead es ___?
+   sí → [Slack] avisar a ventas
+   no → [___] secuencia automática`, ans:['Webhook','caliente','Email'], chips:['Email','caliente','Webhook','Cron'] },
+  { code:`Servidor ___ "tareas"
+  ___: crear_tarea, listar_tareas
+Cliente: descubre y ___ las herramientas`, ans:['MCP','herramientas','llama'], chips:['llama','MCP','herramientas','borra'] },
+  { code:`Precio de una automatización:
+horas ___ al mes x costo por ___
++ ___ mensual`, ans:['ahorradas','hora','mantenimiento'], chips:['mantenimiento','hora','ahorradas','líneas'] },
+ ],
+};
+
 /* Une las lecciones y retos nuevos a cada módulo sin cambiar el progreso guardado */
 MODS.forEach(m => {
   m.ls.forEach((ls, i) => { ls.key = String(i); });
   const extra = MAS[m.id] || {};
   (extra.ls || []).forEach(ls => { m.ls.splice(ls.at ?? m.ls.length, 0, ls); });
-  m.retos = [m.reto, ...(extra.retos || [])];
+  m.retos = [m.reto, ...(extra.retos || []), ...(MAS_RETOS[m.id] || [])];
 });
 const retoKey = (m, k) => k === 0 ? MODS[m].id : MODS[m].id + '-r' + k;
 function retosDone(m){ return MODS[m].retos.filter((_, k) => S.retos[retoKey(m, k)]).length; }
