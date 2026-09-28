@@ -1,4 +1,4 @@
-﻿// Servidor local mínimo para probar la versión offline: node serve.mjs → http://localhost:5173
+// Servidor local mínimo para probar la versión offline: node serve.mjs → http://localhost:5173
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';

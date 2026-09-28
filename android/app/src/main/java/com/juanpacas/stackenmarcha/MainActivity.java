@@ -1,20 +1,23 @@
 package com.juanpacas.stackenmarcha;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.UtteranceProgressListener;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -24,14 +27,12 @@ import android.window.OnBackInvokedDispatcher;
 
 import org.json.JSONObject;
 
-import java.util.Locale;
-
-/** Muestra el curso (assets/index.html) sin internet y le da voz nativa con TextToSpeech. */
-public class MainActivity extends Activity {
+/** Muestra el curso (assets/index.html) sin internet y le da voz nativa, también con la pantalla bloqueada. */
+public class MainActivity extends Activity implements Speech.Events {
 
     private WebView web;
-    private TextToSpeech tts;
-    private volatile boolean ttsReady = false;
+    private Speech speech;
+    private boolean askedNotifications = false;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -56,7 +57,17 @@ public class MainActivity extends Activity {
         s.setTextZoom(100);
         s.setMediaPlaybackRequiresUserGesture(false);
 
+        speech = Speech.get(this);
+        speech.events = this;
+
         web.addJavascriptInterface(new Bridge(), "AndroidTTS");
+        web.setWebChromeClient(new WebChromeClient() {
+            // Los errores de la página aparecen en logcat con la etiqueta StackEnMarcha
+            @Override public boolean onConsoleMessage(ConsoleMessage m) {
+                Log.i("StackEnMarcha", "console: " + m.message() + " @" + m.lineNumber());
+                return true;
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
@@ -69,21 +80,6 @@ public class MainActivity extends Activity {
                 }
                 return false;
             }
-        });
-
-        tts = new TextToSpeech(this, status -> {
-            if (status != TextToSpeech.SUCCESS) return;
-            Locale[] prefs = { new Locale("es", "US"), new Locale("es", "MX"), new Locale("es", "CO"),
-                    new Locale("es", "ES"), new Locale("es") };
-            for (Locale l : prefs) {
-                if (tts.setLanguage(l) >= TextToSpeech.LANG_AVAILABLE) break;
-            }
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
-                @Override public void onDone(String id) { notifyDone(id); }
-                @Override public void onError(String id) { notifyDone(id); }
-            });
-            ttsReady = true;
         });
 
         if (Build.VERSION.SDK_INT >= 33) {
@@ -123,21 +119,41 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void notifyDone(String id) {
-        runOnUiThread(() -> web.evaluateJavascript(
-                "window.__ttsDone && window.__ttsDone(" + JSONObject.quote(id) + ")", null));
+    private void js(String code) {
+        runOnUiThread(() -> { if (web != null) web.evaluateJavascript(code, null); });
     }
 
-    /** El botón atrás navega dentro del curso; en la pantalla de inicio cierra la app. */
+    // Avisos del servicio de voz hacia la pantalla
+    @Override public void onSegment(int index) { js("window.__qProgress && window.__qProgress(" + index + ")"); }
+    @Override public void onQueueDone() { js("window.__qDone && window.__qDone()"); }
+    @Override public void onQueueStopped() { js("window.__qStopped && window.__qStopped()"); }
+    @Override public void onSingleDone(String id) { js("window.__ttsDone && window.__ttsDone(" + JSONObject.quote(id) + ")"); }
+
+    /** El botón atrás navega dentro del curso; en la pantalla de inicio sale de la app. */
     private void handleBack() {
         web.evaluateJavascript("(window.__back ? window.__back() : false)", v -> {
-            if (!"true".equals(v)) finish();
+            // moveTaskToBack en vez de finish: si está sonando una lección, sigue sonando
+            if (!"true".equals(v)) moveTaskToBack(true);
         });
     }
 
     @Override
     public void onBackPressed() {
         handleBack();
+    }
+
+    private void askNotificationsOnce() {
+        if (Build.VERSION.SDK_INT >= 33 && !askedNotifications
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            askedNotifications = true;
+            requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, 1);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) speech.refreshNotification();
     }
 
     @Override
@@ -148,8 +164,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (tts != null) tts.shutdown();
+        if (speech.events == this) speech.events = null;
+        if (isFinishing()) speech.stop();
         if (web != null) web.destroy();
+        web = null;
         super.onDestroy();
     }
 
@@ -157,14 +175,18 @@ public class MainActivity extends Activity {
     private class Bridge {
         @JavascriptInterface
         public boolean speak(String text, float rate, String id) {
-            if (!ttsReady) return false;
-            tts.setSpeechRate(rate);
-            return tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, id) == TextToSpeech.SUCCESS;
+            return speech.speakOne(text, rate, id);
+        }
+
+        @JavascriptInterface
+        public boolean playQueue(String json, float rate, String title) {
+            runOnUiThread(MainActivity.this::askNotificationsOnce);
+            return speech.playQueue(json, rate, title);
         }
 
         @JavascriptInterface
         public void stop() {
-            if (ttsReady) tts.stop();
+            speech.stop();
         }
 
         @JavascriptInterface

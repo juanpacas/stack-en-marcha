@@ -19,7 +19,7 @@ Curso full stack para aprender desde el celular, incluso caminando y sin interne
 
 ## App Android
 
-La carpeta `android/` tiene una app nativa que trae todo el curso adentro: no necesita internet ni para instalarse. Usa la voz del teléfono (TextToSpeech) para el modo caminata y el modo manos libres.
+La carpeta `android/` tiene una app nativa que trae todo el curso adentro: no necesita internet ni para instalarse. Usa la voz del teléfono (TextToSpeech) para el modo caminata y el modo manos libres, y la voz sigue sonando con la pantalla bloqueada gracias a un servicio en primer plano (`PlaybackService`). La notificación tiene un botón Detener.
 
 ```bash
 node build-android.mjs

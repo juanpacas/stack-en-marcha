@@ -1,4 +1,4 @@
-﻿// Genera la versión instalable y offline (PWA) del curso en ./docs
+// Genera la versión instalable y offline (PWA) del curso en ./docs
 // Uso: node build-offline.mjs
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';

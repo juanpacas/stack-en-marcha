@@ -1117,9 +1117,23 @@ function say(text, cb){
   speechSynthesis.speak(u);
 }
 function hush(){
-  W.token++; clearTimeout(W.timer);
+  W.token++; clearTimeout(W.timer); QOWN = null;
   if (NATIVE) { try { NATIVE.stop(); } catch(e) {} }
   if (webSpeech) speechSynthesis.cancel();
+}
+
+/* Cola nativa (app Android): el teléfono reproduce toda la lista de frases y pausas,
+   también con la pantalla bloqueada, y avisa a la página qué segmento está sonando. */
+const NQ = !!(NATIVE && NATIVE.playQueue);
+let QOWN = null;   // quién es dueño de la cola que suena: { onSeg(i), onDone(), onStop() }
+window.__qProgress = i => { if (QOWN) QOWN.onSeg(i); };
+window.__qDone = () => { const o = QOWN; QOWN = null; if (o) o.onDone(); };
+window.__qStopped = () => { const o = QOWN; QOWN = null; if (o) o.onStop(); };
+function nqPlay(owner, segs, title){
+  if (!NQ || !segs.length) return false;
+  QOWN = owner;
+  try { if (NATIVE.playQueue(JSON.stringify(segs), W.rate, title)) return true; } catch(e) {}
+  QOWN = null; return false;
 }
 
 /* ============ NAVEGACIÓN ============ */
@@ -1162,7 +1176,7 @@ function viewHome(){
     </div>
     ${nx ? `<button class="continue" data-act="lesson" data-m="${nx[0]}" data-l="${nx[1]}"><span>${done ? 'Continuar' : 'Empieza aquí'} · Módulo ${nx[0]+1}</span><strong>${esc(MODS[nx[0]].ls[nx[1]].t)}</strong></button>`
           : `<div class="card"><b>Terminaste todas las lecciones.</b> Ahora construye TaskFlow IA y repasa con el quiz relámpago.</div>`}
-    <button class="ghost-link" data-act="tab" data-t="entrevista"><b>Simulador de entrevistas</b><small>24 preguntas reales de entrevistas junior full stack. Practica en voz alta mientras caminas.</small></button>
+    <button class="ghost-link" data-act="tab" data-t="entrevista"><b>Simulador de entrevistas</b><small>${IVQ.length} preguntas reales de entrevistas junior full stack. Practica en voz alta mientras caminas.</small></button>
   </section>
   <h2 style="margin:28px 0 8px;font-size:1.3rem">Tu ruta</h2>
   <div class="trail">${MODS.map((m,i) => {
@@ -1266,14 +1280,29 @@ function walkStep(){
   paintWalk();
   if (!seg){ const was = W.playing; W.playing = false; paintWalk(); releaseLock(); if (was) addXP(10,'Módulo escuchado'); return; }
   if (!W.playing) return;
+  if (NQ && walkNative()) return;
   const nextFn = () => {
-    if (seg.last){ const id = lid(W.m, seg.l); if (!S.heard[id]){ S.heard[id] = true; addXP(5,'Lección escuchada'); } }
+    walkSegDone(seg);
     W.i++; walkStep();
   };
   if (seg.pause){ const tok = ++W.token; W.timer = setTimeout(() => { if (tok === W.token) nextFn(); }, seg.pause / W.rate); }
   else say(seg.say, nextFn);
 }
+function walkSegDone(seg){
+  if (seg && seg.last){ const id = lid(W.m, seg.l); if (!S.heard[id]){ S.heard[id] = true; addXP(5,'Lección escuchada'); } }
+}
+/* Envía al teléfono todo lo que falta del módulo, desde W.i */
+function walkNative(){
+  const start = W.i;
+  const segs = W.q.slice(start).map(s => s.pause ? { pause: Math.round(s.pause / W.rate) } : { say: s.say });
+  return nqPlay({
+    onSeg: k => { const i = start + k; for (let j = W.i; j < i; j++) walkSegDone(W.q[j]); W.i = i; paintWalk(); },
+    onDone: () => { for (let j = W.i; j < W.q.length; j++) walkSegDone(W.q[j]); W.i = W.q.length; walkStep(); },
+    onStop: () => { W.playing = false; paintWalk(); },
+  }, segs, 'Escuchando: ' + MODS[W.m].n);
+}
 async function grabLock(){
+  if (NQ) return;   // la app Android deja bloquear la pantalla: la voz sigue sonando
   if (NATIVE) { try { NATIVE.keepAwake(true); } catch(e) {} return; }
   try { if (navigator.wakeLock) W.lock = await navigator.wakeLock.request('screen'); } catch(e) {}
 }
@@ -1308,7 +1337,7 @@ function viewWalk(){
       <div class="seg" role="group" aria-label="Velocidad">${[0.8,1,1.2,1.4].map(r=>`<button data-act="rate" data-r="${r}" aria-pressed="${W.rate===r}">${r}x</button>`).join('')}</div>
       <label class="toggle" for="wt"><input type="checkbox" id="wt" data-act="think" ${W.think?'checked':''}>Pausa para pensar</label>
     </div>
-    <p class="muted" style="font-size:.85rem">Consejo: deja la pantalla encendida con el brillo bajo. Algunos celulares detienen la voz al bloquearse.</p>
+    <p class="muted" style="font-size:.85rem">${NQ ? 'Puedes bloquear la pantalla y guardar el celular: la voz sigue sonando. Para detenerla usa el botón Detener de la notificación.' : 'Consejo: deja la pantalla encendida con el brillo bajo. Algunos celulares detienen la voz al bloquearse.'}</p>
   </div>`;
 }
 
@@ -1493,6 +1522,7 @@ function ivHF(){
   if (!IV || !IV.hf || !IV.running || IV.phase === 'end') return;
   const it = ivCur();
   IV.phase = 'ask'; ivPaint();
+  if (NQ && ivNative(false)) return;
   say('Pregunta ' + (IV.i+1) + '. ' + it.q + ' Tienes ' + IV.wait + ' segundos. Responde en voz alta.', () => {
     IV.phase = 'wait'; IV.left = IV.wait; ivPaint();
     const tok = W.token;
@@ -1504,10 +1534,47 @@ function ivHF(){
     }, 1000);
   });
 }
+/* Versión para la app Android: todas las preguntas que faltan van en una sola cola,
+   así la entrevista sigue con la pantalla bloqueada. */
+function ivReviewText(it){ return 'Tiempo. Revisa si mencionaste estos puntos: ' + it.k.join('. ') + '. Una buena respuesta sería: ' + it.a; }
+function ivCountdown(){
+  clearInterval(IV.int); IV.left = IV.wait;
+  IV.int = setInterval(() => {
+    IV.left = Math.max(0, IV.left - 1); const el = $('#ivcd'); if (el) el.textContent = IV.left;
+    if (IV.left <= 0) clearInterval(IV.int);
+  }, 1000);
+}
+function ivNative(fromReview){
+  const segs = [], map = [];
+  for (let k = IV.i; k < IV.list.length; k++){
+    const it = IVQ[IV.list[k]];
+    if (!(fromReview && k === IV.i)){
+      segs.push({ say: 'Pregunta ' + (k+1) + '. ' + it.q + ' Tienes ' + IV.wait + ' segundos. Responde en voz alta.' }); map.push({ k, phase:'ask' });
+      segs.push({ pause: IV.wait * 1000 }); map.push({ k, phase:'wait' });
+    }
+    segs.push({ say: ivReviewText(it) }); map.push({ k, phase:'review' });
+  }
+  return nqPlay({
+    onSeg: i => {
+      const m = map[i]; if (!m || !IV) return;
+      while (IV.i < m.k){ ivRecord(null, 'voz'); IV.i++; }
+      IV.phase = m.phase; clearInterval(IV.int);
+      if (m.phase === 'wait') ivCountdown();
+      ivPaint();
+    },
+    onDone: () => {
+      if (!IV) return;
+      while (IV.i < IV.list.length - 1){ ivRecord(null, 'voz'); IV.i++; }
+      ivRecord(null, 'voz'); ivNext();
+    },
+    onStop: () => { if (!IV) return; IV.running = false; clearInterval(IV.int); ivPaint(); },
+  }, segs, 'Entrevista: ' + (IV.mode === 'full' ? 'completa' : IVCAT[IV.mode]));
+}
 function ivHFReview(){
   const it = ivCur();
+  if (NQ){ hush(); clearInterval(IV.int); IV.phase = 'review'; ivPaint(); if (ivNative(true)) return; }
   clearInterval(IV.int); IV.phase = 'review'; ivPaint();
-  say('Tiempo. Revisa si mencionaste estos puntos: ' + it.k.join('. ') + '. Una buena respuesta sería: ' + it.a, () => {
+  say(ivReviewText(it), () => {
     ivRecord(null, 'voz'); ivNext();
   });
 }
@@ -1596,7 +1663,7 @@ function viewIV(){
         <button class="ctl play" data-act="ivhfplay" aria-label="${IV.running?'Pausar':'Continuar'}">${IV.running?ICON.pause:ICON.play}</button>
         <button class="ctl" data-act="ivdone" aria-label="Ya terminé de responder" ${IV.phase==='wait'?'':'disabled'}>${ICON.check}</button>
       </div>
-      <p class="muted" style="font-size:.85rem">El botón de la derecha termina tu respuesta antes de tiempo. En pausa, al continuar se repite la pregunta actual.</p>
+      <p class="muted" style="font-size:.85rem">El botón de la derecha termina tu respuesta antes de tiempo. En pausa, al continuar se repite la pregunta actual.${NQ ? ' Puedes bloquear la pantalla: la entrevista sigue sonando.' : ''}</p>
     </div>`;
   }
   if (IV.phase === 'ask'){
