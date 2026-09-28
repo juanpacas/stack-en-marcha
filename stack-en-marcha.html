@@ -943,26 +943,39 @@ const ICON = {
 };
 
 /* ============ VOZ ============ */
-const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+const NATIVE = window.AndroidTTS || null;   // puente de voz de la app Android
+const webSpeech = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+const canSpeak = !!NATIVE || webSpeech;
+const ttsCb = {};
+window.__ttsDone = id => { const f = ttsCb[id]; delete ttsCb[id]; if (f) f(); };
 let VOICE = null;
 function pickVoice(){
-  if (!canSpeak) return;
+  if (!webSpeech) return;
   const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
   VOICE = vs.find(v => /es[-_](MX|US|CO|419)/i.test(v.lang)) || vs[0] || null;
 }
-if (canSpeak){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+if (webSpeech){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 const W = { m:0, q:[], i:0, playing:false, rate:1, think:true, token:0, timer:null, lock:null };
 function say(text, cb){
   const tok = ++W.token;
   const done = () => { if (tok === W.token && cb) cb(); };
-  if (!canSpeak){ W.timer = setTimeout(done, Math.max(2500, text.length * 65 / W.rate)); return; }
+  if (NATIVE){
+    const id = 'u' + tok; ttsCb[id] = done;
+    try { if (NATIVE.speak(text, W.rate, id)) return; } catch(e) {}
+    delete ttsCb[id];
+  }
+  if (!webSpeech){ W.timer = setTimeout(done, Math.max(2500, text.length * 65 / W.rate)); return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = VOICE ? VOICE.lang : 'es-ES'; if (VOICE) u.voice = VOICE; u.rate = W.rate;
   u.onend = done; u.onerror = done;
   speechSynthesis.speak(u);
 }
-function hush(){ W.token++; clearTimeout(W.timer); if (canSpeak) speechSynthesis.cancel(); }
+function hush(){
+  W.token++; clearTimeout(W.timer);
+  if (NATIVE) { try { NATIVE.stop(); } catch(e) {} }
+  if (webSpeech) speechSynthesis.cancel();
+}
 
 /* ============ NAVEGACIÓN ============ */
 let V = { tab:'ruta', screen:'home', m:0, l:0, step:0, picked:null, first:true };
@@ -1115,8 +1128,14 @@ function walkStep(){
   if (seg.pause){ const tok = ++W.token; W.timer = setTimeout(() => { if (tok === W.token) nextFn(); }, seg.pause / W.rate); }
   else say(seg.say, nextFn);
 }
-async function grabLock(){ try { if (navigator.wakeLock) W.lock = await navigator.wakeLock.request('screen'); } catch(e) {} }
-function releaseLock(){ try { W.lock && W.lock.release(); } catch(e) {} W.lock = null; }
+async function grabLock(){
+  if (NATIVE) { try { NATIVE.keepAwake(true); } catch(e) {} return; }
+  try { if (navigator.wakeLock) W.lock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+function releaseLock(){
+  if (NATIVE) { try { NATIVE.keepAwake(false); } catch(e) {} }
+  try { W.lock && W.lock.release(); } catch(e) {} W.lock = null;
+}
 function paintWalk(){ if (V.tab === 'caminar') $('#view').innerHTML = viewWalk(); }
 function viewWalk(){
   if (!W.q.length) W.q = buildQueue(W.m);
@@ -1544,6 +1563,15 @@ document.addEventListener('change', e => {
   if (t.id === 'wm'){ walkLoad(+t.value); paintWalk(); }
   if (t.id === 'rf'){ newDeck(t.value); render(); }
 });
+/* Botón "atrás" del celular en la app Android: devuelve true si la app lo manejó */
+window.__back = function(){
+  if (V.tab === 'ruta'){
+    if (V.screen === 'lesson' || V.screen === 'reto'){ go({ screen:'mod' }); return true; }
+    if (V.screen === 'mod'){ go({ screen:'home' }); return true; }
+    return false;
+  }
+  go({ tab:'ruta', screen:'home' }); return true;
+};
 function netState(){ const el = $('#net'); if (el) el.hidden = navigator.onLine; }
 window.addEventListener('online', netState); window.addEventListener('offline', netState); netState();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && W.playing) grabLock(); });
