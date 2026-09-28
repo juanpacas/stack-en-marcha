@@ -1663,12 +1663,466 @@ horas ___ al mes x costo por ___
  ],
 };
 
+/* ---------- NIVEL PROFESIONAL: módulos 16 a 21 (se agregan al final para no mover índices) ---------- */
+MODS.push(
+{ id:'linux', grupo:'pro', n:'Terminal y Linux', d:'Los comandos que usarás todos los días en servidores y en tu computador', ls:[
+  { t:'Moverte por carpetas', i:'La terminal te deja controlar el computador escribiendo comandos. Es más rápida que el mouse y es la forma de manejar un servidor en la nube. Empieza por moverte entre carpetas y ver qué hay en ellas.',
+    c:`pwd                 # ¿en qué carpeta estoy?
+ls -la              # listar archivos, incluidos los ocultos
+cd proyectos/app    # entrar a una carpeta
+cd ..               # subir una carpeta
+mkdir nueva         # crear una carpeta`,
+    k:'pwd dice dónde estás, ls lista, cd te mueve y mkdir crea carpetas.',
+    q:['¿Qué comando te lleva a la carpeta de arriba?',['cd ..','ls ..','mkdir ..'],0,'Los dos puntos representan la carpeta que contiene a la actual.'] },
+  { t:'Trabajar con archivos', i:'Con pocos comandos creas, copias, mueves y lees archivos. Cuidado con rm: borra para siempre, sin pasar por la papelera.',
+    c:`touch notas.txt           # crear un archivo vacío
+cp notas.txt copia.txt    # copiar
+mv copia.txt viejo.txt    # mover o renombrar
+cat notas.txt             # ver el contenido
+rm viejo.txt              # borrar (no hay papelera)`,
+    k:'cp copia, mv mueve o renombra, cat muestra y rm borra sin papelera.',
+    q:['¿Qué comando renombra un archivo?',['cp','mv','cat'],1,'mv mueve un archivo; si lo mueves a otro nombre en la misma carpeta, lo renombra.'] },
+  { t:'Buscar y encadenar comandos', i:'grep busca texto dentro de archivos, algo que harás muchísimo para encontrar dónde se usa una función o revisar un log. La barra vertical, llamada pipe, pasa la salida de un comando al siguiente.',
+    c:`grep "ERROR" app.log                # líneas con ERROR
+grep -rn "crearTarea" src/          # buscar en todo el código
+cat app.log | grep ERROR | wc -l    # contar los errores
+tail -f app.log                     # ver el log en vivo`,
+    k:'grep busca texto, la barra | encadena comandos y tail -f muestra un log en vivo.',
+    q:['¿Qué hace la barra | entre dos comandos?',['Los ejecuta a la vez sin relación','Pasa la salida del primero al segundo','Borra el resultado'],1,'Así combinas comandos pequeños para hacer tareas grandes.'] },
+  { t:'Permisos y procesos', i:'En Linux cada archivo tiene permisos de lectura, escritura y ejecución, y chmod los cambia. Con ps ves los programas que corren y con kill los detienes. sudo ejecuta algo como administrador: úsalo con cuidado.',
+    c:`chmod +x deploy.sh      # permitir ejecutar el script
+./deploy.sh             # ejecutarlo
+ps aux | grep node      # ver los procesos de Node
+kill 4821               # detener el proceso 4821
+sudo apt install git    # instalar como administrador`,
+    k:'chmod cambia permisos, ps lista procesos, kill los detiene y sudo da permisos de administrador.',
+    q:['Tu script dice "permiso denegado" al ejecutarlo. ¿Qué haces?',['chmod +x script.sh','rm script.sh','cat script.sh'],0,'chmod +x le da permiso de ejecución.'] },
+  { t:'SSH y servidores', i:'SSH te conecta de forma segura a un servidor remoto, como si estuvieras frente a él. Se usa con llaves en vez de contraseñas: la llave privada se queda en tu computador y la pública va al servidor.',
+    c:`ssh-keygen -t ed25519 -C "tu@correo.com"   # crear tu par de llaves
+ssh usuario@203.0.113.10                   # conectarte al servidor
+scp build.zip usuario@203.0.113.10:/app    # copiar un archivo al servidor`,
+    k:'SSH conecta con un servidor. La llave privada nunca sale de tu computador.',
+    q:['¿Qué llave copias al servidor?',['La privada','La pública','Ambas'],1,'La privada es como tu firma: nunca se comparte.'] },
+ ], retos:[
+  { code:`___            # ver en qué carpeta estás
+___ -la        # listar archivos
+___ proyectos  # entrar a la carpeta`, ans:['pwd','ls','cd'], chips:['cd','pwd','ls','rm'] },
+  { code:`___ notas.txt copia.txt   # copiar
+___ copia.txt final.txt   # renombrar
+___ final.txt             # ver el contenido`, ans:['cp','mv','cat'], chips:['cat','cp','mv','rm'] },
+  { code:`___ -rn "TODO" src/
+cat app.log ___ grep ERROR
+___ -f app.log`, ans:['grep','|','tail'], chips:['tail','|','grep','head'] },
+  { code:`___ +x deploy.sh
+./deploy.sh
+ps aux | grep node
+___ 4821`, ans:['chmod','kill'], chips:['kill','chmod','sudo','stop'] },
+  { code:`___-keygen -t ed25519
+___ usuario@203.0.113.10
+___ build.zip usuario@203.0.113.10:/app`, ans:['ssh','ssh','scp'], chips:['scp','ssh','ssh','cp'] },
+  { code:`___ apt install nginx    # instalar como administrador
+___ nueva-carpeta        # crear una carpeta
+___ viejo.txt            # borrar un archivo`, ans:['sudo','mkdir','rm'], chips:['rm','mkdir','sudo','touch'] },
+ ] },
+
+{ id:'seguridad', grupo:'pro', n:'Seguridad web', d:'Protege tu app de los ataques más comunes', ls:[
+  { t:'El OWASP Top 10', i:'OWASP es una organización que publica los riesgos de seguridad más comunes en aplicaciones web. Conocer esa lista te evita la mayoría de los problemas, y es un tema frecuente en entrevistas.',
+    c:`Riesgos más comunes (OWASP Top 10):
+- Control de acceso roto: ver o cambiar datos ajenos
+- Fallas criptográficas: datos sensibles sin cifrar
+- Inyección: SQL, comandos o código en las entradas
+- Configuración insegura: errores detallados, claves por defecto
+- Componentes vulnerables: librerías sin actualizar
+- Fallas de autenticación: contraseñas débiles, sesiones eternas`,
+    k:'El OWASP Top 10 lista los riesgos más comunes. El primero es el control de acceso roto.',
+    q:['Un usuario cambia el id en la URL y ve el pedido de otro cliente. ¿Qué riesgo es?',['Control de acceso roto','Configuración insegura','Un problema de diseño visual'],0,'Cada endpoint debe verificar que el recurso pertenece al usuario.'] },
+  { t:'XSS: scripts inyectados', i:'XSS ocurre cuando tu página muestra texto de un usuario como si fuera código, y un atacante inyecta un script que roba sesiones. React escapa el texto por defecto; el peligro aparece al insertar HTML crudo.',
+    c:`// Peligroso: inserta HTML sin revisar
+<div dangerouslySetInnerHTML={{ __html: comentario }} />
+
+// Seguro: React muestra el texto tal cual
+<div>{comentario}</div>
+
+// Si necesitas HTML, límpialo antes
+import DOMPurify from "dompurify";
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comentario) }} />`,
+    k:'XSS es ejecutar código inyectado por un usuario. Evita el HTML crudo o límpialo con DOMPurify.',
+    q:['¿Cuándo corres riesgo de XSS en React?',['Al mostrar {texto}','Al usar dangerouslySetInnerHTML con datos del usuario','Al usar useState'],1,'Con llaves React escapa el texto; con HTML crudo no.'] },
+  { t:'Cookies seguras y CSRF', i:'CSRF engaña al navegador para que envíe, desde otro sitio, una petición a tu app con la sesión del usuario. Las cookies con SameSite lo bloquean. Configura siempre bien tus cookies de sesión.',
+    c:`res.cookie("sesion", token, {
+  httpOnly: true,     // JavaScript no puede leerla
+  secure: true,       // solo viaja por HTTPS
+  sameSite: "lax",    // no se envía en peticiones de otros sitios
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});`,
+    k:'Cookies de sesión con httpOnly, secure y sameSite frenan robos de sesión y CSRF.',
+    q:['¿Qué hace httpOnly en una cookie?',['La hace visible para JavaScript','Impide que JavaScript la lea','La borra al cerrar el navegador'],1,'Así un script inyectado no puede robar la sesión.'] },
+  { t:'Límite de peticiones y cabeceras', i:'Limita cuántas peticiones puede hacer cada usuario para frenar ataques de fuerza bruta en el login y el abuso de tu API. Agrega cabeceras de seguridad con una librería como helmet.',
+    c:`import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+
+app.use(helmet());   // cabeceras de seguridad
+app.use("/login", rateLimit({ windowMs: 15 * 60 * 1000, limit: 5 }));
+// máximo 5 intentos de login cada 15 minutos por IP`,
+    k:'Limita las peticiones en rutas sensibles como el login y usa helmet para cabeceras seguras.',
+    q:['¿Qué ataque frena un límite de intentos en el login?',['La fuerza bruta de contraseñas','XSS','Errores de CSS'],0,'Probar miles de contraseñas se vuelve inviable con pocos intentos por minuto.'] },
+  { t:'Dependencias y secretos filtrados', i:'La mayor parte del código de tu app viene de librerías. Revisa sus vulnerabilidades con npm audit y actívalo en CI. Si un secreto se filtra, no basta con borrarlo del código: revócalo y crea uno nuevo.',
+    c:`npm audit              # lista vulnerabilidades conocidas
+npm audit fix          # actualiza lo que se pueda sin romper
+npm outdated           # librerías desactualizadas
+
+Si subiste una clave a GitHub:
+1. Revócala y crea una nueva
+2. Actualízala en el hosting
+3. Revisa el historial de uso`,
+    k:'Revisa dependencias con npm audit. Si un secreto se filtra, revócalo y crea uno nuevo.',
+    q:['Subiste por error una API key a GitHub. ¿Qué es lo más importante?',['Borrar el commit y listo','Revocar la clave y crear una nueva','Hacer el repositorio privado'],1,'La clave ya pudo ser copiada; borrarla del historial no la invalida.'] },
+ ], retos:[
+  { code:`res.cookie("sesion", token, {
+  ___: true,     // JavaScript no puede leerla
+  ___: true,     // solo por HTTPS
+  ___: "lax",
+});`, ans:['httpOnly','secure','sameSite'], chips:['sameSite','secure','httpOnly','public'] },
+  { code:`// Nunca insertes HTML del usuario sin limpiarlo
+const limpio = DOMPurify.___(comentario);
+<div dangerously___InnerHTML={{ __html: ___ }} />`, ans:['sanitize','Set','limpio'], chips:['limpio','Set','sanitize','comentario'] },
+  { code:`app.use(___());
+app.use("/login", ___({ windowMs: 15 * 60 * 1000, ___: 5 }));`, ans:['helmet','rateLimit','limit'], chips:['limit','rateLimit','helmet','cors'] },
+  { code:`// Consulta parametrizada: evita la inyección SQL
+await db.query("SELECT * FROM usuarios WHERE email = ___", [___]);`, ans:['$1','email'], chips:['email','$1','password','?id'] },
+  { code:`npm ___          # ver vulnerabilidades
+npm audit ___    # corregir las que se pueda
+npm ___          # ver librerías desactualizadas`, ans:['audit','fix','outdated'], chips:['outdated','fix','audit','install'] },
+  { code:`const pedido = await db.pedido.findUnique({ where: { id } });
+if (!pedido || pedido.usuarioId !== req.user.___) {
+  return res.status(___).json({ error: "No encontrado" });
+}`, ans:['id','404'], chips:['404','id','200','email'] },
+ ] },
+
+{ id:'algoritmos', grupo:'pro', n:'Algoritmos para entrevistas', d:'Big O, estructuras de datos y los patrones que siempre preguntan', ls:[
+  { t:'Big O en cinco minutos', i:'La notación Big O mide cómo crece el trabajo de un algoritmo cuando crecen los datos. No mide segundos: mide la forma de la curva. En las entrevistas casi siempre te preguntan la complejidad de tu solución.',
+    c:`O(1)        acceder a arr[5] o a un objeto por clave
+O(log n)    búsqueda binaria en una lista ordenada
+O(n)        recorrer una lista una vez
+O(n log n)  ordenar
+O(n²)       un bucle dentro de otro bucle`,
+    k:'Big O describe cómo crece el trabajo con los datos. Un bucle dentro de otro suele ser O(n²).',
+    q:['¿Qué complejidad tiene un bucle dentro de otro sobre la misma lista?',['O(n)','O(n²)','O(1)'],1,'Por cada elemento recorres la lista completa: n por n.'] },
+  { t:'Map: la herramienta estrella', i:'Un Map guarda pares clave y valor, y busca por clave en tiempo constante. Es lo que convierte muchas soluciones lentas O(n²) en O(n). El ejemplo clásico: encontrar dos números que sumen un objetivo.',
+    c:`function dosSuma(nums, objetivo) {
+  const vistos = new Map();                  // valor → índice
+  for (let i = 0; i < nums.length; i++) {
+    const falta = objetivo - nums[i];
+    if (vistos.has(falta)) return [vistos.get(falta), i];
+    vistos.set(nums[i], i);
+  }
+  return null;
+}
+dosSuma([2, 7, 11, 15], 9);  // [0, 1]`,
+    k:'Un Map busca por clave en O(1). Úsalo para recordar lo que ya viste y evitar bucles anidados.',
+    q:['¿Por qué dosSuma con Map es O(n)?',['Recorre la lista una vez y cada búsqueda en el Map es O(1)','Porque ordena la lista','Porque usa recursión'],0,'Sin el Map tendrías que comparar cada par: O(n²).'] },
+  { t:'Dos punteros', i:'Con dos punteros recorres una lista desde ambos extremos, sin memoria extra. Funciona muy bien en listas ordenadas. Una variante, la ventana deslizante, mantiene un rango que avanza y sirve para subarreglos y subcadenas.',
+    c:`// ¿Hay dos números que sumen el objetivo en una lista ORDENADA?
+function parOrdenado(nums, objetivo) {
+  let i = 0, j = nums.length - 1;
+  while (i < j) {
+    const suma = nums[i] + nums[j];
+    if (suma === objetivo) return [i, j];
+    if (suma < objetivo) i++; else j--;
+  }
+  return null;
+}`,
+    k:'Dos punteros recorren desde los extremos. Funcionan muy bien con listas ordenadas.',
+    q:['Si la suma es menor que el objetivo, ¿qué puntero mueves?',['El de la izquierda hacia adelante','El de la derecha hacia atrás','Ninguno'],0,'Avanzar el de la izquierda aumenta la suma porque la lista está ordenada.'] },
+  { t:'Pilas y colas', i:'Una pila funciona como una torre de platos: el último que entra es el primero que sale. Una cola funciona como una fila: el primero que llega sale primero. La pila resuelve el clásico de paréntesis balanceados.',
+    c:`function balanceado(s) {
+  const pila = [];
+  const pares = { ")": "(", "]": "[", "}": "{" };
+  for (const c of s) {
+    if ("([{".includes(c)) pila.push(c);
+    else if (pares[c] && pila.pop() !== pares[c]) return false;
+  }
+  return pila.length === 0;
+}
+balanceado("{[()]}");  // true`,
+    k:'Pila: el último en entrar sale primero, con push y pop. Cola: el primero en entrar sale primero.',
+    q:['¿Qué estructura usa el botón Deshacer de un editor?',['Una cola','Una pila','Un Map'],1,'Deshaces primero lo último que hiciste.'] },
+  { t:'Búsqueda binaria y recursión', i:'La búsqueda binaria parte una lista ordenada a la mitad en cada paso: encuentra un valor entre un millón en unos 20 pasos. La recursión es una función que se llama a sí misma con un problema más pequeño hasta llegar a un caso base.',
+    c:`function buscar(nums, x) {          // nums debe estar ordenado
+  let izq = 0, der = nums.length - 1;
+  while (izq <= der) {
+    const mitad = Math.floor((izq + der) / 2);
+    if (nums[mitad] === x) return mitad;
+    if (nums[mitad] < x) izq = mitad + 1;
+    else der = mitad - 1;
+  }
+  return -1;
+}`,
+    k:'La búsqueda binaria divide a la mitad en cada paso: O(log n). Necesita una lista ordenada.',
+    q:['¿Qué necesita la búsqueda binaria para funcionar?',['Una lista ordenada','Una lista de números pares','Un Map'],0,'Solo así puedes descartar la mitad que no contiene el valor.'] },
+ ], retos:[
+  { code:`arr[5]                      → O(___)
+recorrer la lista una vez   → O(___)
+bucle dentro de otro bucle  → O(___)`, ans:['1','n','n²'], chips:['n²','1','log n','n'] },
+  { code:`const vistos = new ___();
+if (vistos.___(falta)) return [vistos.get(falta), i];
+vistos.___(nums[i], i);`, ans:['Map','has','set'], chips:['set','has','Map','push'] },
+  { code:`const pila = [];
+pila.___("(");              // agregar arriba
+const tope = pila.___();    // sacar el de arriba
+return pila.___ === 0;`, ans:['push','pop','length'], chips:['length','pop','push','shift'] },
+  { code:`const mitad = Math.___((izq + der) / 2);
+if (nums[mitad] < x) izq = mitad ___ 1;
+else der = mitad ___ 1;`, ans:['floor','+','-'], chips:['-','floor','+','round'] },
+  { code:`let i = 0, j = nums.length ___ 1;
+while (i ___ j) {
+  if (suma < objetivo) i___; else j--;
+}`, ans:['-','<','++'], chips:['++','<','-','>'] },
+  { code:`function factorial(n) {
+  if (n <= 1) ___ 1;              // caso base
+  return n * ___(n ___ 1);
+}`, ans:['return','factorial','-'], chips:['-','factorial','return','+'] },
+ ] },
+
+{ id:'sistemas', grupo:'pro', n:'Diseño de sistemas', d:'Cómo piensan los seniors: escalar, cachear y no perder datos', ls:[
+  { t:'Cómo abordar un diseño', i:'En una entrevista de diseño no hay una única respuesta correcta. Evalúan cómo piensas: aclarar requisitos, estimar el tamaño, dibujar los componentes y explicar los tradeoffs, es decir, qué ganas y qué pierdes con cada decisión.',
+    c:`1. Requisitos: ¿qué debe hacer? ¿para cuántos usuarios?
+2. Estimación: peticiones por segundo, datos por día
+3. Diseño básico: cliente → API → base de datos
+4. Cuellos de botella: ¿qué se rompe primero al crecer?
+5. Tradeoffs: qué ganas y qué pierdes con cada decisión`,
+    k:'Aclara requisitos, estima, diseña simple y luego explica los tradeoffs de cada decisión.',
+    q:['¿Qué haces primero en una entrevista de diseño de sistemas?',['Elegir la base de datos','Aclarar los requisitos','Dibujar microservicios'],1,'Diseñar sin requisitos claros lleva a resolver el problema equivocado.'] },
+  { t:'Escalar horizontalmente', i:'Escalar verticalmente es usar una máquina más grande: fácil, pero tiene límite. Escalar horizontalmente es poner más máquinas detrás de un balanceador de carga que reparte las peticiones. Para eso la API no debe guardar estado en memoria.',
+    c:`                    ┌── API 1 ──┐
+Usuarios → Balanceador ├── API 2 ──┼→ Base de datos
+                    └── API 3 ──┘
+
+API sin estado: las sesiones van en la base de datos o en Redis`,
+    k:'Escalar horizontalmente es sumar máquinas detrás de un balanceador. Requiere APIs sin estado.',
+    q:['¿Por qué la API no debe guardar la sesión en su memoria si escalas horizontalmente?',['Porque la siguiente petición puede llegar a otra máquina','Porque la memoria es lenta','No importa'],0,'El balanceador reparte las peticiones entre servidores distintos.'] },
+  { t:'Caché con Redis', i:'Redis es una base de datos en memoria, rapidísima, muy usada como caché. Guardas ahí resultados costosos con un tiempo de expiración. El patrón más común: buscar primero en caché y, si no está, ir a la base de datos y guardar el resultado.',
+    c:`async function obtenerProducto(id) {
+  const enCache = await redis.get(\`producto:\${id}\`);
+  if (enCache) return JSON.parse(enCache);
+
+  const producto = await db.producto.findUnique({ where: { id } });
+  await redis.set(\`producto:\${id}\`, JSON.stringify(producto), { EX: 300 });
+  return producto;
+}`,
+    k:'Busca primero en caché; si no está, consulta la base de datos y guarda con expiración.',
+    q:['¿Para qué sirve EX: 300 en redis.set?',['Para que el dato expire en 300 segundos','Para guardar 300 copias','Para cifrarlo'],0,'La expiración evita mostrar datos viejos para siempre.'] },
+  { t:'Colas y trabajos en segundo plano', i:'Hay tareas lentas que el usuario no necesita esperar: enviar correos, procesar videos, generar reportes. Las pones en una cola y un worker las procesa aparte. La API responde al instante y, si algo falla, se reintenta.',
+    c:`// API: encola y responde de inmediato
+await cola.add("enviar-bienvenida", { usuarioId: user.id });
+res.status(202).json({ ok: true });
+
+// Worker (otro proceso): procesa la cola "correos"
+new Worker("correos", async (job) => {
+  await enviarCorreo(job.data.usuarioId);
+});`,
+    k:'Lo lento va a una cola que procesa un worker. La API responde rápido y los fallos se reintentan.',
+    q:['¿Qué código de estado usas cuando aceptas un trabajo que se hará después?',['202 Accepted','500','404'],0,'202 dice que la petición fue aceptada pero todavía no terminó.'] },
+  { t:'Monolito o microservicios', i:'Un monolito es una sola aplicación: simple de desarrollar y desplegar. Los microservicios dividen el sistema en servicios independientes que escalan por separado, pero suman mucha complejidad. Casi siempre conviene empezar con un monolito bien organizado.',
+    c:`Monolito
+  + Simple de desarrollar, probar y desplegar
+  − Todo escala junto
+
+Microservicios
+  + Equipos y despliegues independientes
+  − Red, monitoreo y datos distribuidos: más complejidad`,
+    k:'Empieza con un monolito bien organizado. Divide en microservicios solo cuando haya una razón clara.',
+    q:['Un equipo de 3 personas empieza un producto nuevo. ¿Qué conviene?',['Diez microservicios','Un monolito bien organizado','Un servicio por cada función'],1,'Los microservicios resuelven problemas de organizaciones grandes, no de equipos pequeños.'] },
+ ], retos:[
+  { code:`1. ___: qué debe hacer y para cuántos usuarios
+2. ___: peticiones por segundo y datos
+3. Diseño básico y cuellos de botella
+4. ___: qué ganas y qué pierdes`, ans:['Requisitos','Estimación','Tradeoffs'], chips:['Tradeoffs','Estimación','Requisitos','Colores'] },
+  { code:`Máquina más grande              → escalar ___
+Más máquinas iguales            → escalar ___
+Reparte peticiones entre ellas  → ___ de carga`, ans:['vertical','horizontal','balanceador'], chips:['balanceador','horizontal','vertical','router'] },
+  { code:`const enCache = await redis.___(clave);
+if (enCache) return JSON.___(enCache);
+await redis.set(clave, JSON.stringify(dato), { ___: 300 });`, ans:['get','parse','EX'], chips:['EX','parse','get','TTL'] },
+  { code:`await cola.___("enviar-bienvenida", { usuarioId });
+res.status(___).json({ ok: true });
+new ___("correos", async (job) => enviarCorreo(job.data.usuarioId));`, ans:['add','202','Worker'], chips:['Worker','202','add','200'] },
+  { code:`Equipo pequeño, producto nuevo    → ___
+Equipos grandes independientes    → ___
+Tareas lentas como correos        → ___`, ans:['monolito','microservicios','cola'], chips:['cola','microservicios','monolito','caché'] },
+  { code:`Archivos estáticos cerca del usuario  → ___
+Datos que se leen muy seguido         → ___
+Reparte el tráfico entre servidores   → ___`, ans:['CDN','caché','balanceador'], chips:['balanceador','caché','CDN','cola'] },
+ ] },
+
+{ id:'k8s', grupo:'pro', tag:'Alta prima', n:'Kubernetes', d:'Orquesta contenedores a escala: el plus de los mejor pagados', ls:[
+  { t:'Qué es Kubernetes', i:'Kubernetes administra muchos contenedores en muchos servidores. Tú declaras el estado que quieres, por ejemplo tres copias de tu API, y él lo mantiene: reinicia lo que falla y reparte la carga. Los full stack que además lo dominan están entre los mejor pagados.',
+    c:`Tú declaras:          "quiero 3 copias de mi API"
+Kubernetes:           crea 3 pods
+Si uno falla:         lo reemplaza solo
+Si sube el tráfico:   puede escalar a más copias`,
+    k:'Kubernetes mantiene el estado que declaras: cuántas copias corren y cómo se exponen.',
+    q:['Si un contenedor de tu API se cae, ¿qué hace Kubernetes?',['Nada','Lo reemplaza automáticamente','Borra el clúster'],1,'Compara lo que declaraste con lo que corre y corrige la diferencia.'] },
+  { t:'Pods y Deployments', i:'Un pod es la unidad más pequeña: uno o más contenedores que corren juntos. Casi nunca creas pods a mano. Creas un Deployment, que dice qué imagen usar y cuántas réplicas mantener.',
+    c:`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api }
+  template:
+    metadata:
+      labels: { app: api }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/juanpacas/api:1.0
+          ports: [{ containerPort: 3000 }]`,
+    k:'Un Deployment define la imagen y cuántas réplicas, es decir pods, deben correr.',
+    q:['¿Qué campo del Deployment dice cuántas copias correr?',['replicas','image','ports'],0,'Con replicas: 3, Kubernetes mantiene tres pods.'] },
+  { t:'Services e Ingress', i:'Los pods cambian de dirección cada vez que se recrean. Un Service les da una dirección fija dentro del clúster y reparte el tráfico entre ellos. Un Ingress expone tu app a internet con un dominio.',
+    c:`apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector: { app: api }
+  ports: [{ port: 80, targetPort: 3000 }]
+
+# Ingress: api.mi-app.com → Service "api" → pods`,
+    k:'Un Service da una dirección estable a los pods. Un Ingress los expone a internet con un dominio.',
+    q:['¿Qué objeto da una dirección fija a un grupo de pods?',['Service','Pod','Secret'],0,'El Service encuentra los pods por sus etiquetas y reparte el tráfico.'] },
+  { t:'kubectl', i:'kubectl es la herramienta de terminal para hablar con Kubernetes. Con ella aplicas archivos, ves el estado, lees logs y vuelves a una versión anterior si algo sale mal.',
+    c:`kubectl apply -f deployment.yaml       # crear o actualizar
+kubectl get pods                       # ver los pods
+kubectl logs api-7d9f8-x2k4            # leer los logs de un pod
+kubectl describe pod api-7d9f8-x2k4    # ver eventos y errores
+kubectl rollout undo deployment/api    # volver a la versión anterior`,
+    k:'kubectl apply aplica cambios, get y describe muestran el estado y logs muestra los registros.',
+    q:['Tu nuevo despliegue falla. ¿Qué comando vuelve a la versión anterior?',['kubectl rollout undo','kubectl delete all','kubectl get pods'],0,'rollout undo restaura el Deployment anterior en segundos.'] },
+  { t:'Secrets y escalado automático', i:'La configuración va en ConfigMaps y las claves en Secrets, no dentro de la imagen. Con un HorizontalPodAutoscaler, Kubernetes agrega o quita pods según el uso de CPU.',
+    c:`kubectl create secret generic api-secretos --from-literal=JWT_SECRET=...
+kubectl autoscale deployment api --cpu-percent=70 --min=2 --max=10
+# mínimo 2 pods; hasta 10 si la CPU pasa del 70 %`,
+    k:'ConfigMap para configuración, Secret para claves y el autoscaler para escalar según la carga.',
+    q:['¿Dónde guardas la clave JWT en Kubernetes?',['Dentro de la imagen de Docker','En un Secret','En el README'],1,'Así cambias la clave sin reconstruir la imagen y no queda en el código.'] },
+ ], retos:[
+  { code:`___: apps/v1
+kind: ___
+spec:
+  ___: 3`, ans:['apiVersion','Deployment','replicas'], chips:['replicas','Deployment','apiVersion','Pod','copies'] },
+  { code:`kubectl ___ -f deployment.yaml
+kubectl ___ pods
+kubectl ___ api-7d9f8-x2k4`, ans:['apply','get','logs'], chips:['logs','get','apply','run'] },
+  { code:`kind: ___
+spec:
+  selector: { app: api }
+  ports: [{ port: 80, ___: 3000 }]`, ans:['Service','targetPort'], chips:['targetPort','Service','Ingress','hostPort'] },
+  { code:`Configuración normal   → ___
+Claves y contraseñas   → ___
+Exponer a internet     → ___`, ans:['ConfigMap','Secret','Ingress'], chips:['Ingress','Secret','ConfigMap','Pod'] },
+  { code:`kubectl ___ undo deployment/api
+kubectl ___ deployment api --cpu-percent=70 --min=2 --max=10`, ans:['rollout','autoscale'], chips:['autoscale','rollout','scale','restart'] },
+  { code:`Unidad mínima: uno o más contenedores  → ___
+Mantiene N réplicas de una imagen      → ___
+Dirección estable para los pods        → ___`, ans:['Pod','Deployment','Service'], chips:['Service','Deployment','Pod','Node'] },
+ ] },
+
+{ id:'pagos', grupo:'pro', n:'Pagos con Stripe', d:'Cobra en tu app: checkout, suscripciones y webhooks', ls:[
+  { t:'Cómo funciona un pago en línea', i:'Tu app nunca debe tocar los datos de la tarjeta. Una pasarela como Stripe los recibe en su propia página, cobra y te avisa el resultado. Tú solo guardas el estado del pago y entregas el producto.',
+    c:`1. El usuario toca "Pagar" en tu app
+2. Tu backend crea una sesión de pago en Stripe
+3. El usuario paga en la página segura de Stripe
+4. Stripe avisa a tu backend con un webhook: "pago completado"
+5. Tu backend marca el pedido como pagado`,
+    k:'Los datos de la tarjeta los maneja la pasarela. Tu backend crea la sesión y confirma el pago por webhook.',
+    q:['¿Quién debe recibir los datos de la tarjeta?',['Tu base de datos','La pasarela de pagos, como Stripe','Tu servidor, en un archivo'],1,'Guardar tarjetas exige cumplir normas muy estrictas; la pasarela lo resuelve por ti.'] },
+  { t:'Stripe Checkout', i:'Stripe Checkout es la forma más rápida de cobrar. Tu backend crea una sesión con el producto y el precio, y redirige al usuario a una página de pago ya hecha, segura y con muchos métodos de pago.',
+    c:`import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+const session = await stripe.checkout.sessions.create({
+  mode: "payment",
+  line_items: [{ price: "price_123", quantity: 1 }],
+  success_url: "https://mi-app.com/gracias",
+  cancel_url: "https://mi-app.com/carrito",
+});
+// redirige al usuario a session.url`,
+    k:'checkout.sessions.create crea la página de pago y rediriges al usuario a session.url.',
+    q:['¿Dónde se crea la sesión de Checkout?',['En el frontend, con la clave secreta','En tu backend, con la clave secreta','En el HTML'],1,'La clave secreta de Stripe nunca debe llegar al navegador.'] },
+  { t:'Webhooks de pago', i:'No confíes en que el usuario llegó a la página de gracias: pudo cerrar el navegador antes. La confirmación real llega por webhook: Stripe llama a tu endpoint y tú verificas la firma antes de marcar el pedido como pagado.',
+    c:`app.post("/webhooks/stripe", express.raw({ type: "application/json" }), (req, res) => {
+  const firma = req.headers["stripe-signature"];
+  const evento = stripe.webhooks.constructEvent(req.body, firma, process.env.STRIPE_WEBHOOK_SECRET);
+  if (evento.type === "checkout.session.completed") {
+    marcarPagado(evento.data.object.id);
+  }
+  res.json({ received: true });
+});`,
+    k:'Confirma los pagos con webhooks y verifica siempre la firma con constructEvent.',
+    q:['¿Por qué verificar la firma del webhook?',['Para que nadie finja ser Stripe y marque pedidos como pagados','Para que sea más rápido','No hace falta'],0,'Sin verificarla, cualquiera podría llamar a tu endpoint.'] },
+  { t:'Suscripciones', i:'Para cobrar cada mes usas suscripciones: un precio recurrente y un Checkout en modo subscription. Los webhooks te avisan cuando se renueva, falla un cobro o el cliente cancela, y según eso das o quitas acceso.',
+    c:`const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  line_items: [{ price: "price_mensual", quantity: 1 }],
+  success_url: "https://mi-app.com/cuenta",
+  cancel_url: "https://mi-app.com/planes",
+});
+
+// Webhooks clave:
+// invoice.paid                   → mantener el acceso
+// invoice.payment_failed         → avisar al cliente
+// customer.subscription.deleted  → quitar el acceso`,
+    k:'Las suscripciones usan mode subscription, y los webhooks deciden cuándo dar o quitar acceso.',
+    q:['¿Qué evento indica que se canceló una suscripción?',['invoice.paid','customer.subscription.deleted','checkout.session.completed'],1,'Al recibirlo, quitas el acceso al plan pagado.'] },
+  { t:'Pruebas y buenas prácticas', i:'Stripe tiene un modo de prueba con tarjetas ficticias, así pruebas todo sin mover dinero real. Guarda los montos en centavos, nunca en decimales, y haz que tu webhook tolere recibir el mismo evento dos veces.',
+    c:`Tarjeta de prueba:  4242 4242 4242 4242, cualquier fecha futura y CVC
+Claves:             sk_test_... en desarrollo, sk_live_... en producción
+Montos:             19900 centavos, no 199.00 (evita errores de redondeo)
+Eventos repetidos:  si el pedido ya está pagado, ignora el evento
+
+stripe listen --forward-to localhost:3000/webhooks/stripe   # webhooks en local`,
+    k:'Prueba con claves de test, guarda montos en centavos y procesa cada evento una sola vez.',
+    q:['¿Cómo guardas un precio de 199,00 dólares?',['199.00 como decimal','19900 en centavos','Como texto'],1,'Los decimales de coma flotante causan errores de redondeo con dinero.'] },
+ ], retos:[
+  { code:`const session = await stripe.checkout.___.create({
+  ___: "payment",
+  line_items: [{ price: "price_123", quantity: 1 }],
+  success_url: "https://mi-app.com/gracias",
+});
+// redirige a session.___`, ans:['sessions','mode','url'], chips:['url','mode','sessions','link'] },
+  { code:`const evento = stripe.webhooks.___(req.body, firma, secreto);
+if (evento.___ === "checkout.session.completed") marcarPagado();`, ans:['constructEvent','type'], chips:['type','constructEvent','parse','name'] },
+  { code:`Pago único       → mode: "___"
+Cobro mensual    → mode: "___"
+Cliente canceló  → customer.subscription.___`, ans:['payment','subscription','deleted'], chips:['deleted','subscription','payment','created'] },
+  { code:`Clave en desarrollo              → ___
+Clave en producción              → ___
+199,00 USD en la base de datos   → ___`, ans:['sk_test','sk_live','19900'], chips:['19900','sk_live','sk_test','199.00'] },
+  { code:`1. Tu backend crea la ___ de pago
+2. El usuario paga en la página de ___
+3. Stripe avisa con un ___
+4. Marcas el pedido como pagado`, ans:['sesión','Stripe','webhook'], chips:['webhook','Stripe','sesión','correo'] },
+  { code:`stripe ___ --forward-to localhost:3000/webhooks/stripe
+Tarjeta de prueba: ___ 4242 4242 4242`, ans:['listen','4242'], chips:['4242','listen','1234','run'] },
+ ] },
+);
+
+/* Secciones de la ruta: se muestra un título cuando cambia el grupo */
+const GRUPOS = {
+  extra: { t:'Especialidades', d:'Suma una o dos cuando termines la ruta principal. Cada una abre otro tipo de empleo.' },
+  pro:   { t:'Nivel profesional', d:'Lo que separa a un junior de un semi-senior: terminal, seguridad, algoritmos, diseño de sistemas, Kubernetes y pagos.' },
+};
+const grupo = m => m.grupo || (m.extra ? 'extra' : null);
+
 /* Une las lecciones y retos nuevos a cada módulo sin cambiar el progreso guardado */
 MODS.forEach(m => {
   m.ls.forEach((ls, i) => { ls.key = String(i); });
   const extra = MAS[m.id] || {};
   (extra.ls || []).forEach(ls => { m.ls.splice(ls.at ?? m.ls.length, 0, ls); });
-  m.retos = [m.reto, ...(extra.retos || []), ...(MAS_RETOS[m.id] || [])];
+  m.retos = m.retos || [m.reto, ...(extra.retos || []), ...(MAS_RETOS[m.id] || [])];
 });
 const retoKey = (m, k) => k === 0 ? MODS[m].id : MODS[m].id + '-r' + k;
 function retosDone(m){ return MODS[m].retos.filter((_, k) => S.retos[retoKey(m, k)]).length; }
@@ -1700,6 +2154,7 @@ const PLAN = [
   ['Sem 11','React Native. Versión móvil con Expo',[9]],
   ['Sem 12','Proyecto final TaskFlow IA, portafolio y aplicar a empleos',[10]],
   ['Sem 13+','Especialidades: Python y automatización (Power Automate, n8n), o Go si apuntas a nube',[11,12,13,14]],
+  ['Mientras aplicas','Nivel profesional: terminal, seguridad y algoritmos primero; luego diseño de sistemas, Kubernetes y pagos',[15,16,17,18,19,20]],
 ];
 
 /* ============ ESTADO ============ */
@@ -1849,7 +2304,8 @@ function viewHome(){
   <h2 style="margin:28px 0 8px;font-size:1.3rem">Tu ruta</h2>
   <div class="trail">${MODS.map((m,i) => {
     const d = modDone(i), all = d === m.ls.length, now = nx && nx[0] === i;
-    const head = m.extra && !MODS[i-1].extra ? `<div class="trail-head"><h2>Especialidades</h2><p class="muted">Suma una o dos cuando termines la ruta principal. Cada una abre otro tipo de empleo.</p></div>` : '';
+    const g = grupo(m), head = g && g !== (i ? grupo(MODS[i-1]) : null)
+      ? `<div class="trail-head"><h2>${GRUPOS[g].t}</h2><p class="muted">${GRUPOS[g].d}</p></div>` : '';
     return `${head}<button class="station ${all?'done':''} ${now?'now':''}" data-act="mod" data-m="${i}">
       <span class="dot">${all ? ICON.check.replace('<svg','<svg width="20" height="20"') : pad(i+1)}</span>
       <span><span class="st-t">${esc(m.n)}${m.tag?'<span class="tag">'+esc(m.tag)+'</span>':''}</span><span class="st-d">${esc(m.d)}</span></span>
@@ -2180,6 +2636,13 @@ const IVQ = [
   { c:'soft', m:10, q:'Háblame de un proyecto del que te sientas orgulloso.', k:['El problema que resolvía','Tu papel y tus decisiones técnicas','Un reto y cómo lo superaste','El resultado y lo que aprendiste'], a:'Estoy orgulloso de TaskFlow IA, un gestor de tareas web y móvil que divide tareas grandes en pasos con IA. Lo construí con Next.js, PostgreSQL y React Native. El mayor reto fue que las respuestas de la IA a veces venían con el formato equivocado; lo resolví pidiendo JSON y validándolo con Zod. Aprendí a tratar la salida de la IA como datos no confiables.' },
   { c:'soft', m:10, q:'¿Cómo manejas los plazos ajustados?', k:['Priorizar lo que más valor da','Comunicar los riesgos temprano','Dividir el trabajo en entregas pequeñas','Un ejemplo concreto'], a:'Primero separo lo imprescindible de lo deseable y lo acuerdo con quien pidió el trabajo. Divido en entregas pequeñas para mostrar avances y, si veo un riesgo, lo aviso apenas lo detecto, no el último día. En mi proyecto final tenía una fecha límite y dejé la app móvil para una segunda versión; así entregué a tiempo algo que funcionaba bien.' },
   { c:'soft', m:10, q:'¿Cómo recibes las críticas a tu código?', k:['Verlas como una forma de aprender','Preguntar para entender el porqué','Aplicar los cambios y agradecer','Un ejemplo de algo que mejoraste'], a:'Las recibo bien: una revisión de código es la forma más rápida de aprender. Si no entiendo un comentario, pregunto el porqué en lugar de defenderme. Por ejemplo, me señalaron que hacía consultas repetidas dentro de un bucle; aprendí sobre el problema N+1 y desde entonces lo reviso antes de pedir revisión.' },
+  /* Preguntas de los módulos de nivel profesional */
+  { c:'tec', m:15, q:'Un servidor Linux está lento. ¿Cómo lo investigas?', k:['Ver uso de CPU y memoria con top o htop','Revisar el espacio en disco con df -h','Leer los logs con tail y grep','Identificar el proceso culpable y actuar'], a:'Primero miro top o htop para ver si la CPU o la memoria están saturadas y qué proceso las consume. Reviso el disco con df -h, porque un disco lleno detiene muchas cosas. Luego leo los logs de la aplicación con tail y grep buscando errores. Con el proceso identificado decido: reiniciarlo, corregir el problema o darle más recursos.' },
+  { c:'tec', m:16, q:'¿Qué es XSS y cómo lo previenes?', k:['Inyectar scripts que corren en el navegador de otros usuarios','Escapar siempre el texto que muestras','Evitar el HTML crudo o limpiarlo con DOMPurify','Cookies httpOnly y una política de seguridad de contenido'], a:'XSS es cuando un atacante logra que mi página ejecute un script suyo en el navegador de otros usuarios, por ejemplo para robar sesiones. Lo prevengo mostrando siempre el texto escapado, como hace React por defecto, y evitando dangerouslySetInnerHTML o limpiando el HTML con DOMPurify. Además uso cookies httpOnly para que un script no pueda leer la sesión.' },
+  { c:'cod', m:17, q:'Encuentra el primer carácter que no se repite en un texto.', k:['Contar las apariciones con un Map','Recorrer otra vez y devolver el primero con cuenta 1','Complejidad O(n)','Casos: texto vacío o sin caracteres únicos'], a:'Recorro el texto una vez y cuento cada carácter en un Map. Luego lo recorro otra vez en orden y devuelvo el primer carácter cuya cuenta sea 1. Son dos pasadas, así que es O(n). Si no hay ninguno, o el texto está vacío, devuelvo null.' },
+  { c:'cod', m:18, q:'Diseña un acortador de enlaces como bit.ly.', k:['Generar un código corto y único para cada URL','Tabla código → URL original, con índice en el código','Al visitar el código, redirigir a la URL original','Caché para los enlaces más visitados'], a:'Al recibir una URL genero un código corto único, por ejemplo con un contador convertido a base 62, y lo guardo en una tabla código → URL con un índice sobre el código. Cuando alguien visita el enlace corto, busco el código y respondo con una redirección a la URL original. Como se lee mucho más de lo que se escribe, pongo los enlaces más visitados en una caché como Redis.' },
+  { c:'tec', m:19, q:'¿Qué problema resuelve Kubernetes?', k:['Administrar muchos contenedores en muchos servidores','Mantener el estado declarado: réplicas y reinicios','Repartir el tráfico con Services','Escalar según la carga y volver atrás si falla un despliegue'], a:'Kubernetes administra contenedores en muchos servidores. Yo declaro el estado que quiero, por ejemplo tres réplicas de la API, y él lo mantiene: reinicia lo que falla y reemplaza pods caídos. Los Services reparten el tráfico, el autoscaler agrega pods según la carga, y si un despliegue falla puedo volver a la versión anterior con rollout undo.' },
+  { c:'tec', m:20, q:'¿Cómo confirmas que un pago se hizo de verdad?', k:['No confiar en que el usuario llegó a la página de éxito','Esperar el webhook del proveedor de pagos','Verificar la firma del webhook','Procesar cada evento una sola vez'], a:'No me baso en que el usuario llegó a la página de gracias, porque pudo cerrarla o falsificarla. Confirmo el pago cuando llega el webhook del proveedor, por ejemplo checkout.session.completed de Stripe, y verifico su firma. Como el mismo evento puede llegar dos veces, reviso si el pedido ya estaba pagado antes de entregar el producto.' },
   { c:'soft', m:10, last:true, q:'¿Tienes alguna pregunta para nosotros?', k:['Siempre llevar dos o tres preguntas','Sobre el equipo, la forma de trabajar o los retos del puesto','Cómo se mide el éxito en los primeros meses','No empezar preguntando por vacaciones o salario'], a:'Sí, tengo algunas. ¿Cómo es un día normal del equipo y cómo revisan el código? ¿Qué esperan que logre la persona que entre en sus primeros tres meses? ¿Y cuál es el reto técnico más grande que tienen ahora mismo?' },
 ];
 let IV = null, SAMPLE = null, ivTick = null, ivCtl = null;
